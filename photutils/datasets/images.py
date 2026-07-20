@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for making simulated images for documentation examples and tests.
-"""
 
 import astropy.units as u
 import numpy as np
@@ -241,14 +237,10 @@ def make_model_image(shape, model, params_table, *, model_shape=None,
 
     xypos_map = {x_name: x_name, y_name: y_name}
 
-    # By default, use the model parameter names as the column names
-    # if they are in the table
     params_to_set = set(params_table.colnames) & set(model.param_names)
     xypos_map.update({param: param for param in params_to_set})
 
     if params_map is not None:
-        # params_map takes precedence over x_name and y_name and
-        # any matching column names in params_table
         xypos_map.update(params_map)
     params_map = xypos_map
 
@@ -284,7 +276,6 @@ def make_model_image(shape, model, params_table, *, model_shape=None,
     else:
         local_bkg = np.zeros(len(params_table))
 
-    # Copy the input model to leave it unchanged
     model = model.copy()
 
     if progress_bar:
@@ -296,24 +287,17 @@ def make_model_image(shape, model, params_table, *, model_shape=None,
     for i, source in enumerate(params_table):
         for key, param in params_map.items():
             value = source[param]
-            # Skip if any parameter value is not finite
             if not np.isfinite(value):
                 break
             setattr(model, key, value)
 
         else:  # All parameters are finite for the source
-            # This assumes that if the user also uses params_table to
-            # override the (x/y)_name mapping that the x_name and y_name
-            # values are correct (i.e., the mapping keys include x_name
-            # and y_name). There is no good way to check/enforce this.
             x0 = getattr(model, x_name).value
             y0 = getattr(model, y_name).value
 
             if variable_shape:
                 mod_shape = model_shape[i]
             elif model_shape is None:
-                # The bounding box size generally depends on model
-                # parameters, so needs to be calculated for each source
                 mod_shape = _model_shape_from_bbox(model,
                                                    bbox_factor=bbox_factor)
             else:
@@ -336,9 +320,6 @@ def make_model_image(shape, model, params_table, *, model_shape=None,
                                               mode=discretize_method,
                                               factor=discretize_oversample)
 
-                # If the model is a Quantity, then the output image
-                # should also be a Quantity with the same units;
-                # but apply the units only once
                 if apply_units and isinstance(subimg, u.Quantity):
                     apply_units = False
                     image <<= subimg.unit
@@ -351,7 +332,6 @@ def make_model_image(shape, model, params_table, *, model_shape=None,
                     raise ValueError(msg) from exc
 
             except NoOverlapError:
-                # Evaluate the model to get the model output units
                 result = model(0, 0)
                 if isinstance(result, u.Quantity):
                     image <<= result.unit

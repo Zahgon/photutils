@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for performing aperture photometry.
-"""
 
 import warnings
 
@@ -19,7 +15,6 @@ from photutils.utils._misc import _get_meta
 __all__ = ['aperture_photometry']
 
 
-# Remove in 4.0
 _DEPRECATED_COLUMNS: dict = {
     'xcenter': 'x_center',
     'ycenter': 'y_center',
@@ -193,19 +188,15 @@ def aperture_photometry(data, apertures, error=None, mask=None,
         single_aperture = True
         apertures = (apertures,)
 
-    # Create table metadata using the input apertures, not the converted
-    # ones
     aper_meta = {}
     for i, aperture in enumerate(apertures):
         i = '' if single_aperture else i
         aper_meta.update(_aperture_metadata(aperture, index=i))
 
-    # Convert regions to apertures if necessary
     apertures = [region_to_aperture(aper)
                  if not isinstance(aper, Aperture) else aper
                  for aper in apertures]
 
-    # Convert sky to pixel apertures
     skyaper = False
     if isinstance(apertures[0], SkyAperture):
         if wcs is None:
@@ -213,26 +204,22 @@ def aperture_photometry(data, apertures, error=None, mask=None,
                    'the wcs keyword when using a SkyAperture object.')
             raise ValueError(msg)
 
-        # Include SkyCoord position in the output table
         skyaper = True
         skycoord_pos = apertures[0].positions
 
         apertures = [aper.to_pixel(wcs) for aper in apertures]
 
-    # Compare positions in pixels to avoid comparing SkyCoord objects
     positions = apertures[0].positions
     for aper in apertures[1:]:
         if not np.array_equal(aper.positions, positions):
             msg = 'Input apertures must all have identical positions'
             raise ValueError(msg)
 
-    # Define output table meta data
     meta = _get_meta()
     calling_args = f"method='{method}', subpixels={subpixels}"
     meta['aperture_photometry_args'] = calling_args
     meta.update(aper_meta)
 
-    # Replace with QTable in 4.0
     tbl = create_empty_deprecated_qtable(
         _DEPRECATED_COLUMNS, since='3.0', until='4.0')
 
@@ -247,7 +234,6 @@ def aperture_photometry(data, apertures, error=None, mask=None,
 
     if skyaper:
         if skycoord_pos.isscalar:
-            # Create length-1 SkyCoord array
             tbl['sky_center'] = skycoord_pos.reshape((-1,))
         else:
             tbl['sky_center'] = skycoord_pos

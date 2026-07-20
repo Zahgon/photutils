@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for centroiding sources.
-"""
 
 import inspect
 import warnings
@@ -110,7 +106,6 @@ def centroid_com(data, mask=None):
 
     indices = np.ogrid[tuple(slice(0, i) for i in data.shape)]
 
-    # Output array is reversed to give (x, y) order (e.g., for 2D data)
     return np.array([np.sum(indices[axis] * data) / total
                      for axis in range(data.ndim)])[::-1]
 
@@ -299,21 +294,17 @@ def centroid_quadratic(data, mask=None, fit_boxsize=5, xpeak=None,
             xidx += slc_data[1].start
             yidx += slc_data[0].start
 
-    # Return the position of the maximum if it is at the edge of the
-    # data
     if xidx in (0, nx - 1) or yidx in (0, ny - 1):
         msg = ('maximum value is at the edge of the data and its '
                'position was returned; no quadratic fit was performed')
         warnings.warn(msg, AstropyUserWarning)
         return np.array((xidx, yidx), dtype=float)
 
-    # Extract the fitting region
     slc_data, _ = overlap_slices(data.shape, fit_boxsize, (yidx, xidx),
                                  mode='trim')
     xidx0, xidx1 = (slc_data[1].start, slc_data[1].stop)
     yidx0, yidx1 = (slc_data[0].start, slc_data[0].stop)
 
-    # Shift the fitting box if it was clipped by the data edge
     if (xidx1 - xidx0) < fit_boxsize[1]:
         if xidx0 == 0:
             xidx1 = min(nx, xidx0 + fit_boxsize[1])
@@ -332,14 +323,12 @@ def centroid_quadratic(data, mask=None, fit_boxsize=5, xpeak=None,
         warnings.warn(msg, AstropyUserWarning)
         return np.array((np.nan, np.nan))
 
-    # Fit a 2D quadratic polynomial to the fitting region
     xi = np.arange(xidx0, xidx1)
     yi = np.arange(yidx0, yidx1)
     x, y = np.meshgrid(xi, yi)
     x = x.ravel()
     y = y.ravel()
 
-    # Pre-allocate coefficient matrix for optimization
     coeff_matrix = np.empty((x.size, 6), dtype=float)
     coeff_matrix[:, 0] = 1
     coeff_matrix[:, 1] = x
@@ -348,7 +337,6 @@ def centroid_quadratic(data, mask=None, fit_boxsize=5, xpeak=None,
     coeff_matrix[:, 4] = x * x
     coeff_matrix[:, 5] = y * y
 
-    # Include only finite values in the fit.
     finite_mask = np.isfinite(cutout)
     if not np.all(finite_mask):
         coeff_matrix = coeff_matrix[finite_mask]
@@ -361,16 +349,9 @@ def centroid_quadratic(data, mask=None, fit_boxsize=5, xpeak=None,
         warnings.warn(msg, AstropyUserWarning)
         return np.array((np.nan, np.nan))
 
-    # Analytically find the maximum of the polynomial
     _, c10, c01, c11, c20, c02 = c
     det = 4 * c20 * c02 - c11**2
 
-    # If the determinant is <= 0, the surface has a saddle point. If
-    # the determinant is > 0, the surface has a minimum or maximum. The
-    # curvature is negative (maximum) if c20 < 0 and c02 < 0. However,
-    # if det > 0, then 4 * c20 * c02 > c11**2 >= 0, so c20 and c02 must
-    # have the same sign. Therefore, we only need to check if c20 > 0
-    # (or c02 > 0) to determine if the surface has a minimum.
     if det <= 0 or c20 > 0:
         msg = 'quadratic fit does not have a maximum'
         warnings.warn(msg, AstropyUserWarning)
@@ -389,49 +370,6 @@ def centroid_quadratic(data, mask=None, fit_boxsize=5, xpeak=None,
 
 
 class CentroidQuadratic:
-    """
-    Class to calculate the centroid of a 2D array by fitting a 2D
-    quadratic polynomial.
-
-    This class provides a callable interface to the
-    `~photutils.centroids.centroid_quadratic` function, allowing a
-    centroid function with specific fit parameters to be defined and
-    reused. This is useful, for example, when using a customized
-    centroid function with `~photutils.centroids.centroid_sources`.
-
-    Parameters
-    ----------
-    fit_boxsize : int or tuple of int, optional
-        The size (in pixels) of the box used to define the fitting
-        region. If ``fit_boxsize`` has two elements, they must be in
-        ``(ny, nx)`` order. If ``fit_boxsize`` is a scalar then a square
-        box of size ``fit_boxsize`` will be used. ``fit_boxsize`` must
-        have odd values for both axes.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from photutils.datasets import make_4gaussians_image
-    >>> from photutils.centroids import CentroidQuadratic
-    >>> data = make_4gaussians_image()
-    >>> data -= np.median(data[0:30, 0:125])
-    >>> data = data[40:80, 70:110]
-    >>> centroid_func = CentroidQuadratic(fit_boxsize=5)
-    >>> x1, y1 = centroid_func(data)
-    >>> print(np.array((x1, y1)))  # doctest: +FLOAT_CMP
-    [19.94009505 20.06884997]
-
-    Using with `~photutils.centroids.centroid_sources`::
-
-        >>> from photutils.centroids import centroid_sources
-        >>> data = make_4gaussians_image()
-        >>> data -= np.median(data[0:30, 0:125])
-        >>> x_init = (25, 91, 151, 160)
-        >>> y_init = (40, 61, 24, 71)
-        >>> centroid_func = CentroidQuadratic(fit_boxsize=3)
-        >>> x, y = centroid_sources(data, x_init, y_init, box_size=25,
-        ...                         centroid_func=centroid_func)
-    """
 
     def __init__(self, *, fit_boxsize=5):
         self.fit_boxsize = fit_boxsize
@@ -644,18 +582,11 @@ def centroid_sources(data, xpos, ypos, box_size=11, footprint=None,
         msg = "The input 'centroid_func' must have a 'mask' keyword."
         raise ValueError(msg)
 
-    # Drop any **kwargs not supported by the centroid_func
     centroid_kwargs = {key: val for key, val in kwargs.items()
                        if key in spec.parameters}
 
-    # Save the original error array before the loop so that each
-    # iteration independently slices the full-image array
     error_array = centroid_kwargs.get('error')
 
-    # Extract xpeak/ypeak before the loop so the original absolute
-    # coordinates are available for every source. The per-iteration
-    # block below re-adds them with the correct cutout offset each time.
-    # Remove this block once xpeak and ypeak are fully deprecated.
     xpeak_orig = centroid_kwargs.pop('xpeak', None)
     ypeak_orig = centroid_kwargs.pop('ypeak', None)
 
@@ -669,11 +600,9 @@ def centroid_sources(data, xpos, ypos, box_size=11, footprint=None,
                                                     footprint.shape, (yp, xp))
         data_cutout = data[slices_large]
 
-        # Trim footprint mask if it has only partial overlap on the data
         footprint_mask = inverted_footprint[slices_small]
 
         if mask is not None:
-            # Combine the input mask cutout and footprint mask
             mask_cutout = np.logical_or(mask[slices_large], footprint_mask)
         else:
             mask_cutout = footprint_mask
@@ -690,9 +619,6 @@ def centroid_sources(data, xpos, ypos, box_size=11, footprint=None,
         if error_array is not None:
             centroid_kwargs['error'] = error_array[slices_large]
 
-        # Remove this block once xpeak and ypeak are fully deprecated.
-        # Clear any xpeak/ypeak left by the previous iteration, then
-        # re-add with the offset relative to this source's cutout.
         centroid_kwargs.pop('xpeak', None)
         centroid_kwargs.pop('ypeak', None)
         if xpeak_orig is not None and ypeak_orig is not None:

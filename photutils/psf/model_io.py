@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for reading and writing PSF models.
-"""
 
 import io
 import itertools
@@ -20,42 +16,8 @@ __doctest_skip__ = ['GriddedPSFModelRead']
 
 
 class GriddedPSFModelRead(registry.UnifiedReadWrite):
-    """
-    Read and parse a FITS file into a `GriddedPSFModel` instance.
-
-    This class enables the astropy unified I/O layer for
-    `~photutils.psf.GriddedPSFModel`. This allows easily reading a file
-    in different supported data formats using syntax such as::
-
-      >>> from photutils.psf import GriddedPSFModel
-      >>> psf_model = GriddedPSFModel.read('filename.fits', format=format)
-
-    Get help on the available readers for
-    `~photutils.psf.GriddedPSFModel` using the ``help()`` method::
-
-      >>> # Get help reading Table and list supported formats
-      >>> GriddedPSFModel.read.help()
-
-      >>> # Get detailed help on the STSPSF FITS reader
-      >>> GriddedPSFModel.read.help('stdpsf')
-
-      >>> # Get detailed help on the WebbPSF FITS reader
-      >>> GriddedPSFModel.read.help('webbpsf')
-
-      >>> # Print list of available formats
-      >>> GriddedPSFModel.read.list_formats()
-
-    Parameters
-    ----------
-    instance : object
-        Descriptor calling instance or `None` if no instance.
-
-    cls : type
-        Descriptor calling class (either owner class or instance class).
-    """
 
     def __init__(self, instance, cls):
-        # uses default global registry
         super().__init__(instance, cls, 'read', registry=None)
 
     def __call__(self, *args, **kwargs):
@@ -125,21 +87,9 @@ def _read_stdpsf(filename):
         msg = 'Unknown STDPSF FITS file'
         raise ValueError(msg)
 
-    # STDPDF FITS positions are 1-indexed
     xgrid = np.array(xgrid) - 1
     ygrid = np.array(ygrid) - 1
 
-    # nypsfs, nxpsfs, detector
-    # 6, 6     WFPC2, 4 det
-    # 1, 1     ACS/HRC
-    # 10, 9    ACS/WFC, 2 det
-    # 3, 3     WFC3/IR
-    # 8, 7     WFC3/UVIS, 2 det
-    # 5, 5     NIRISS
-    # 5, 5     NIRCam SW
-    # 10, 20   NIRCam SW (NRCSW), 8 det
-    # 5, 5     NIRCam LW
-    # 3, 3     MIRI
 
     return {'data': data,
             'npsfs': npsfs,
@@ -202,7 +152,6 @@ def _split_detectors(grid_data, detector_data, detector_id):
     ii = reshape_as_blocks(ii, (nypsfs, nxpsfs))
     ii = ii.reshape(ndet, npsfs // ndet)
 
-    # detector_id -> index
     det_idx = det_map[detector_id]
     idx = ii[det_idx]
     data = data[idx]
@@ -247,8 +196,6 @@ def _split_wfc_uvis(grid_data, detector_id):
         msg = 'detector_id must be 1 or 2'
         raise ValueError(msg)
 
-    # ACS/WFC1 and WFC3/UVIS1 chip1 (sci, 2) are above chip2 (sci, 1)
-    # in y-pixel coordinates
     xgrid = grid_data['xgrid']
     ygrid = grid_data['ygrid']
     ygrid = ygrid.reshape((2, ygrid.shape[0] // 2))[detector_id - 1]
@@ -297,9 +244,6 @@ def _split_wfpc2(grid_data, detector_id):
     nydet = 2
     det_size = 800
 
-    # det (exten:idx)
-    # WF2 (2:2)  PC (1:3)
-    # WF3 (3:0)  WF4 (4:1)
     det_map = {1: 3, 2: 2, 3: 0, 4: 1}
 
     detector_data = {'nxdet': nxdet,
@@ -344,9 +288,6 @@ def _split_nrcsw(grid_data, detector_id):
     nydet = 2
     det_size = 2048
 
-    # det (ext:idx)
-    # A2 (2:4)  A4 (4:5)  B3 (7:6)  B1 (5:7)
-    # A1 (1:0)  A3 (3:1)  B4 (8:2)  B2 (6:3)
     det_map = {1: 0, 3: 1, 8: 2, 6: 3, 2: 4, 4: 5, 7: 6, 5: 7}
 
     detector_data = {'nxdet': nxdet,
@@ -506,7 +447,6 @@ def stdpsf_reader(filename, detector_id=None):
         xgrid = grid_data['xgrid']
         ygrid = grid_data['ygrid']
 
-    # itertools.product iterates over the last input first
     xy_grid = [yx[::-1] for yx in itertools.product(ygrid, xgrid)]
 
     oversampling = 4  # assumption for STDPSF files
@@ -517,8 +457,6 @@ def stdpsf_reader(filename, detector_id=None):
             'nxpsfs': nxpsfs,
             'nypsfs': nypsfs}
 
-    # try to get additional metadata from the filename because this
-    # information is not currently available in the FITS headers
     file_meta = _get_metadata(filename, detector_id)
     if file_meta is not None:
         meta.update(file_meta)
@@ -559,7 +497,6 @@ def webbpsf_reader(filename):
             header = hdulist[0].header
             data = hdulist[0].data
 
-    # handle the case of only one 2D PSF
     data = np.atleast_3d(data)
 
     if not any('DET_YX' in key for key in header):
@@ -569,7 +506,6 @@ def webbpsf_reader(filename):
         msg = 'Invalid WebbPSF FITS file; missing "OVERSAMP" header key'
         raise ValueError(msg)
 
-    # convert header to meta dict
     header = header.copy(strip=True)
     header.pop('HISTORY', None)
     header.pop('COMMENT', None)
@@ -577,7 +513,6 @@ def webbpsf_reader(filename):
     meta = dict(header)
     meta = {key.lower(): meta[key] for key in meta}  # user lower-case keys
 
-    # define grid_xypos from DET_YX{} FITS header keywords
     xypos = []
     for key in meta:
         if 'det_yx' in key:

@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for measuring morphological properties of sources.
-"""
 
 import numpy as np
 
@@ -63,7 +59,6 @@ def data_properties(data, mask=None, background=None, wcs=None):
         If ``background`` is provided and is not a scalar or a 2D array
         with the same shape as ``data``.
     """
-    # Prevent circular import
     from photutils.segmentation import SegmentationImage, SourceCatalog
 
     data = np.asanyarray(data)
@@ -93,7 +88,5 @@ def data_properties(data, mask=None, background=None, wcs=None):
                    'with the same shape as data')
             raise ValueError(msg)
 
-    # mask is encoded in seg_arr (masked pixels set to 0), so
-    # mask=None is intentional here
     return SourceCatalog(data, segment_image, mask=None,
                          background=background, wcs=wcs)[0]

@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for centroiding sources using Gaussians.
-"""
 
 import warnings
 
@@ -91,7 +87,6 @@ def centroid_1dg(data, error=None, mask=None):
     else:
         xy_weights = [np.ones(data.shape[i]) for i in (1, 0)]
 
-    # Assign zero weight where an entire row or column is masked
     if np.any(mask):
         bad_idx = [np.all(mask, axis=i) for i in (0, 1)]
         for i in (0, 1):
@@ -99,7 +94,6 @@ def centroid_1dg(data, error=None, mask=None):
 
     xy_data = [np.sum(data, axis=i) for i in (0, 1)]
 
-    # Gaussian1D stddev is bounded to be strictly positive
     fitter = TRFLSQFitter()
 
     centroid = []
@@ -183,9 +177,6 @@ def centroid_2dg(data, error=None, mask=None):
                '2D Gaussian.')
         raise ValueError(msg)
 
-    # Subtract the minimum of the data to make the data values positive.
-    # Moments from negative data values can yield undefined Gaussian
-    # parameters, e.g., x_stddev and y_stddev.
     shifted = data - np.min(data)
     if np.sum(shifted) == 0:
         msg = ('Input data must have non-constant values to fit a '
@@ -197,7 +188,6 @@ def centroid_2dg(data, error=None, mask=None):
     else:
         weights = np.ones(data.shape)
 
-    # Assign zero weight to masked pixels
     if np.any(mask):
         weights[mask] = 0.0
 

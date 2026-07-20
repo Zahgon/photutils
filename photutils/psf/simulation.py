@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for creating images from PSF models.
-"""
 
 import numpy as np
 
@@ -164,7 +160,6 @@ def make_psf_model_image(shape, psf_model, n_sources, *, model_shape=None,
 
     other_params = {}
     if kwargs:
-        # include only kwargs that are not x, y, or flux (main params)
         for key, val in kwargs.items():
             if key not in psf_model.param_names or key in main_params[0:2]:
                 continue  # skip the x, y parameters

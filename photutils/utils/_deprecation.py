@@ -1,18 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-A module to create Astropy Tables with deprecated column names.
-
-It is designed to create new table objects from raw data, rather than
-modifying existing tables.
-
-The primary function, ``create_deprecated_table_from_data``, handles
-the data renaming and constructs an instance of a custom ``Table`` or
-``QTable`` subclass that correctly handles all deprecated name access.
-
-Note that standalone Astropy functions like ``join`` inspect
-``colnames`` directly and do not trigger the deprecation mapping. Users
-must use the new column names when calling such functions.
-"""
 
 import inspect
 import warnings
@@ -266,61 +251,11 @@ def deprecated_positional_kwargs(since, *, until=None):
         about positional arguments.
     """
     def decorator(func):  # numpydoc ignore=GL08
-        since_str = str(since)
-        until_str = str(until) if until is not None else None
-        sig = inspect.signature(func)
-        n_positional = 0
-        param_names = []
-        for name, param in sig.parameters.items():
-            param_names.append(name)
-            if (param.kind in (inspect.Parameter.POSITIONAL_ONLY,
-                               inspect.Parameter.POSITIONAL_OR_KEYWORD)
-                    and param.default is inspect.Parameter.empty):
-                n_positional += 1
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):  # numpydoc ignore=GL08
-            if len(args) > n_positional:
-                extra_names = param_names[n_positional:len(args)]
-                quoted = [f"'{name}'" for name in extra_names]
-                if len(quoted) == 1:
-                    params_str = quoted[0]
-                    pronoun = 'it'
-                    kwarg_noun = 'a keyword argument'
-                elif len(quoted) == 2:
-                    params_str = f'{quoted[0]} and {quoted[1]}'
-                    pronoun = 'them'
-                    kwarg_noun = 'keyword arguments'
-                else:
-                    params_str = (', '.join(quoted[:-1])
-                                  + f', and {quoted[-1]}')
-                    pronoun = 'them'
-                    kwarg_noun = 'keyword arguments'
-                examples_str = ', '.join(f'{name}=...' for name in extra_names)
-                remove_str = 'a future version'
-                if until_str is not None:
-                    remove_str = f'version {until_str}'
-                msg = (f'Passing {params_str} positionally to '
-                       f"'{func.__name__}' is deprecated as of version "
-                       f'{since_str} and will be removed in {remove_str}. '
-                       f'Pass {pronoun} as {kwarg_noun} instead '
-                       f'(e.g., {examples_str}).')
-                warnings.warn(msg, AstropyDeprecationWarning, stacklevel=2)
-            return func(*args, **kwargs)
-        return wrapper
+        pass
     return decorator
 
 
 class DeprecatedColumnMixin:
-    """
-    A mixin to handle deprecated column names in Astropy tables.
-
-    This mixin overrides common table methods to intercept calls
-    using old column names. It translates them to new names, issues a
-    deprecation warning, and then calls the original parent method via
-    ``super()``. This works correctly because instances are created from
-    this class directly, ensuring a valid method resolution order.
-    """
 
     deprecation_map = None
     _deprecation_since = None
@@ -449,113 +384,28 @@ class DeprecatedColumnMixin:
         super().__delitem__(item)
 
     def keep_columns(self, names):
-        """
-        Override for keeping specified columns.
-
-        Parameters
-        ----------
-        names : list or tuple
-            A list or tuple of column names to keep.
-        """
-        names = self._translate_names(names)
-        super().keep_columns(names)
+        pass
 
     def remove_column(self, name):
-        """
-        Override for column removal.
-
-        Parameters
-        ----------
-        name : str
-            The name of the column to be removed.
-        """
-        name = self._translate_names(name)
-        super().remove_column(name)
+        pass
 
     def remove_columns(self, names):
-        """
-        Override for multiple column removal.
-
-        Parameters
-        ----------
-        names : list or tuple
-            A list or tuple of column names to be removed.
-        """
-        names = self._translate_names(names)
-        super().remove_columns(names)
+        pass
 
     def rename_column(self, name, new_name):
-        """
-        Override for column renaming.
-
-        Parameters
-        ----------
-        name : str
-            The current name of the column to be renamed.
-
-        new_name : str
-            The new name for the column.
-        """
-        name = self._translate_names(name)
-        super().rename_column(name, new_name)
+        pass
 
     def rename_columns(self, names, new_names):
-        """
-        Override for multiple column renaming.
-
-        Parameters
-        ----------
-        names : list or tuple
-            A list or tuple of current column names to be renamed.
-
-        new_names : list or tuple
-            A list or tuple of new names for the columns.
-        """
-        names = self._translate_names(names)
-        super().rename_columns(names, new_names)
+        pass
 
     def replace_column(self, name, col, **kwargs):
-        """
-        Override for column replacement.
-
-        Parameters
-        ----------
-        name : str
-            The current name of the column to be replaced.
-
-        col : `Column` or `MaskedColumn`
-            The new column to replace the existing one.
-
-        **kwargs : dict, optional
-            Additional keyword arguments passed to the parent method.
-        """
-        name = self._translate_names(name)
-        super().replace_column(name, col, **kwargs)
+        pass
 
     def add_index(self, names):
-        """
-        Override for index addition.
-
-        Parameters
-        ----------
-        names : str or list or tuple
-            The name(s) of the column(s) to be indexed.
-        """
-        names = self._translate_names(names)
-        super().add_index(names)
+        pass
 
     def remove_indices(self, names):
-        """
-        Override for index removal.
-
-        Parameters
-        ----------
-        names : str or list or tuple
-            The name(s) of the column(s) whose indices are to be
-            removed.
-        """
-        names = self._translate_names(names)
-        super().remove_indices(names)
+        pass
 
     def sort(self, keys, **kwargs):
         """
@@ -574,19 +424,7 @@ class DeprecatedColumnMixin:
         super().sort(keys, **kwargs)
 
     def group_by(self, keys, **kwargs):
-        """
-        Override for grouping.
-
-        Parameters
-        ----------
-        keys : str or list or tuple
-            The name(s) of the column(s) to group by.
-
-        **kwargs : dict, optional
-            Additional keyword arguments passed to the parent method.
-        """
-        keys = self._translate_names(keys)
-        return super().group_by(keys, **kwargs)
+        pass
 
     def copy(self, copy_data=True):
         """
@@ -612,15 +450,11 @@ class DeprecatedColumnMixin:
 
 
 class DeprecatedColumnTable(DeprecatedColumnMixin, Table):
-    """
-    An Astropy Table with built-in support for deprecated names.
-    """
+    pass
 
 
 class DeprecatedColumnQTable(DeprecatedColumnMixin, QTable):
-    """
-    An Astropy QTable with built-in support for deprecated names.
-    """
+    pass
 
 
 def create_empty_deprecated_qtable(deprecation_map, *, since=None,
@@ -773,7 +607,6 @@ def create_deprecated_table_from_data(data, deprecation_map, *,
     >>> type(qtable).__name__
     'DeprecatedColumnQTable'
     """
-    # Rename the keys in the data dictionary before creation
     renamed_data = {
         deprecation_map.get(k, k): v for k, v in data.items()
     }
@@ -785,7 +618,6 @@ def create_deprecated_table_from_data(data, deprecation_map, *,
     table_class = (DeprecatedColumnQTable if use_qtable
                    else DeprecatedColumnTable)
 
-    # Create the table instance
     table = table_class(renamed_data, **kwargs)
     table.deprecation_map = deprecation_map
     table._deprecation_since = since

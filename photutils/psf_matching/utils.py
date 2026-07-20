@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Utility functions for the psf_matching subpackage.
-"""
 
 
 import numpy as np
@@ -43,7 +39,6 @@ def _validate_kernel_inputs(source_psf, target_psf, window):
     TypeError
         If the input ``window`` is not callable.
     """
-    # Copy as float so in-place normalization doesn't modify inputs
     source_psf = np.array(source_psf, dtype=float)
     target_psf = np.array(target_psf, dtype=float)
 
@@ -59,7 +54,6 @@ def _validate_kernel_inputs(source_psf, target_psf, window):
         msg = 'window must be a callable.'
         raise TypeError(msg)
 
-    # Ensure input PSFs are normalized
     source_psf /= source_psf.sum()
     target_psf /= target_psf.sum()
 
@@ -192,18 +186,14 @@ def _convert_psf_to_otf(psf, shape):
                f'shape {shape} in at least one dimension.')
         raise ValueError(msg)
 
-    # Zero-pad to the output shape with PSF centered in the array
     padded = np.zeros(shape, dtype=psf.dtype)
 
-    # Calculate where to place PSF so its center aligns with padded
-    # array center
     center = tuple(s // 2 for s in shape)
     psf_center = tuple(s // 2 for s in inshape)
     start = tuple(c - pc for c, pc in zip(center, psf_center, strict=True))
     padded[start[0]:start[0] + inshape[0],
            start[1]:start[1] + inshape[1]] = psf
 
-    # Shift the centered PSF so its center moves to [0, 0]
     padded = ifftshift(padded)
 
     return fft2(padded)
@@ -298,17 +288,12 @@ def resize_psf(psf, input_pixel_scale, output_pixel_scale, *, order=3):
 
     ratio = input_pixel_scale / output_pixel_scale
 
-    # Compute target shape using ceiling (never discard pixels), then
-    # add 1 to any even dimension to guarantee an odd output, which is
-    # required for PSF matching.
     in_shape = np.array(psf.shape)
     out_shape = np.maximum(1, np.ceil(in_shape * ratio).astype(int))
     out_shape += out_shape % 2 == 0
 
-    # Per-axis zoom factors for the forced-odd target shape
     zoom_factors = out_shape / in_shape
 
-    # Normalize the PSF to conserve total flux after resizing.
     psf_sum = psf.sum()
     result = zoom(psf, zoom_factors, order=order)
     return result * (psf_sum / result.sum())

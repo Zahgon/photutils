@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Functional PSF models.
-"""
 
 import astropy.units as u
 import numpy as np
@@ -25,132 +21,10 @@ GAUSSIAN_FWHM_TO_SIGMA = 1.0 / (2.0 * np.sqrt(2.0 * np.log(2.0)))
 
 
 def _gaussian_amplitude(flux, xsigma, ysigma):
-    # output units should match the input flux units
-    if isinstance(xsigma, u.Quantity):
-        xsigma = xsigma.value
-        ysigma = ysigma.value
-
-    return flux / (2.0 * np.pi * xsigma * ysigma)
+    pass
 
 
 class GaussianPSF(Fittable2DModel):
-    r"""
-    A 2D Gaussian PSF model.
-
-    This model is evaluated by sampling the 2D Gaussian at the input
-    coordinates. The Gaussian is normalized such that the analytical
-    integral over the entire 2D plane is equal to the total flux.
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak along the x-axis.
-
-    y_0 : float, optional
-        Position of the peak along the y-axis.
-
-    x_fwhm : float, optional
-        The full width at half maximum (FWHM) of the Gaussian along the
-        x axis.
-
-    y_fwhm : float, optional
-        FWHM of the Gaussian along the y axis.
-
-    theta : float, optional
-        The counterclockwise rotation angle either as a float (in
-        degrees) or a `~astropy.units.Quantity` angle (optional).
-
-    bbox_factor : float, optional
-        The multiple of the x and y standard deviations (sigma) used to
-        define the bounding box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    CircularGaussianPSF, GaussianPRF, CircularGaussianPRF, MoffatPSF
-
-    Notes
-    -----
-    The Gaussian function is defined as:
-
-    .. math::
-
-        f(x, y) = \frac{F}{2 \pi \sigma_{x} \sigma_{y}}
-                  \exp \left( -a\left(x - x_{0}\right)^{2}
-                  - b \left(x - x_{0}\right) \left(y - y_{0}\right)
-                  - c \left(y - y_{0}\right)^{2} \right)
-
-    where :math:`F` denotes the total integrated flux, :math:`(x_{0},
-    y_{0})` denotes the position of the peak, and :math:`\sigma_{x}` and
-    :math:`\sigma_{y}` denote are the standard deviations along the x
-    and y axes, respectively.
-
-    .. math::
-
-        a = \frac{\cos^{2}{\theta}}{2 \sigma_{x}^{2}}
-            + \frac{\sin^{2}{\theta}}{2 \sigma_{y}^{2}}
-
-        b = \frac{\sin{2 \theta}}{2 \sigma_{x}^{2}}
-            - \frac{\sin{2 \theta}}{2 \sigma_{y}^{2}}
-
-        c = \frac{\sin^{2}{\theta}} {2 \sigma_{x}^{2}}
-            + \frac{\cos^{2}{\theta}}{2 \sigma_{y}^{2}}
-
-    where :math:`\theta` is the rotation angle of the Gaussian.
-
-    The FWHMs of the Gaussian along the x and y axes are given by:
-
-    .. math::
-
-        \rm{FWHM}_{x} = 2 \sigma_{x} \sqrt{2 \ln{2}}
-
-        \rm{FWHM}_{y} = 2 \sigma_{y} \sqrt{2 \ln{2}}
-
-    The model is normalized such that:
-
-    .. math::
-
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y) \,dx \,dy = F
-
-    The ``x_fwhm``, ``y_fwhm``, and ``theta`` parameters are fixed by
-    default. If you wish to fit these parameters, set the ``fixed``
-    attribute to `False`, e.g.,::
-
-        >>> from photutils.psf import GaussianPSF
-        >>> model = GaussianPSF()
-        >>> model.x_fwhm.fixed = False
-        >>> model.y_fwhm.fixed = False
-        >>> model.theta.fixed = False
-
-    By default, the ``x_fwhm`` and ``y_fwhm`` parameters are bounded to
-    be strictly positive.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Gaussian_function
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import GaussianPSF
-
-        model = GaussianPSF(flux=71.4, x_0=24.3, y_0=25.2, x_fwhm=10.1,
-                            y_fwhm=5.82, theta=21.7)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -182,24 +56,15 @@ class GaussianPSF(Fittable2DModel):
 
     @property
     def amplitude(self):
-        """
-        The peak amplitude of the Gaussian.
-        """
-        return _gaussian_amplitude(self.flux, self.x_sigma, self.y_sigma)
+        pass
 
     @property
     def x_sigma(self):
-        """
-        Gaussian sigma (standard deviation) along the x-axis.
-        """
-        return self.x_fwhm * GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     @property
     def y_sigma(self):
-        """
-        Gaussian sigma (standard deviation) along the y-axis.
-        """
-        return self.y_fwhm * GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     def _calc_bounding_box(self, *, factor=5.5):
         """
@@ -298,7 +163,6 @@ class GaussianPSF(Fittable2DModel):
         b = 0.5 * ((sin2t / xstd2) - (sin2t / ystd2))
         c = 0.5 * ((sint2 / xstd2) + (cost2 / ystd2))
 
-        # output units should match the input flux units
         if isinstance(xstd, u.Quantity):
             xstd = xstd.value
             ystd = ystd.value
@@ -309,219 +173,17 @@ class GaussianPSF(Fittable2DModel):
 
     @staticmethod
     def fit_deriv(x, y, flux, x_0, y_0, x_fwhm, y_fwhm, theta):
-        """
-        Calculate the partial derivatives of the 2D Gaussian function
-        with respect to the parameters.
-
-        Parameters
-        ----------
-        x, y : float or array_like
-            The x and y coordinates at which to evaluate the model.
-
-        flux : float
-            Total integrated flux over the entire PSF.
-
-        x_0, y_0 : float
-            Position of the peak along the x and y axes.
-
-        x_fwhm, y_fwhm : float
-            FWHM of the Gaussian along the x and y axes.
-
-        theta : float
-            The counterclockwise rotation angle either as a float (in
-            degrees) or a `~astropy.units.Quantity` angle (optional).
-
-        Returns
-        -------
-        result : list of `~numpy.ndarray`
-            The list of partial derivatives with respect to each
-            parameter.
-        """
-        if not isinstance(theta, u.Quantity):
-            theta = np.deg2rad(theta)
-
-        cost = np.cos(theta)
-        sint = np.sin(theta)
-        cost2 = cost ** 2
-        sint2 = sint ** 2
-        cos2t = np.cos(2.0 * theta)
-        sin2t = np.sin(2.0 * theta)
-        xstd = x_fwhm * GAUSSIAN_FWHM_TO_SIGMA
-        ystd = y_fwhm * GAUSSIAN_FWHM_TO_SIGMA
-        xstd2 = xstd ** 2
-        ystd2 = ystd ** 2
-        xstd3 = xstd ** 3
-        ystd3 = ystd ** 3
-        xdiff = x - x_0
-        ydiff = y - y_0
-        xdiff2 = xdiff ** 2
-        ydiff2 = ydiff ** 2
-        a = 0.5 * ((cost2 / xstd2) + (sint2 / ystd2))
-        b = 0.5 * ((sin2t / xstd2) - (sin2t / ystd2))
-        c = 0.5 * ((sint2 / xstd2) + (cost2 / ystd2))
-
-        amplitude = flux / (2 * np.pi * xstd * ystd)
-        exp = np.exp(-(a * xdiff2) - (b * xdiff * ydiff) - (c * ydiff2))
-        g = amplitude * exp
-
-        da_dtheta = sint * cost * ((1.0 / ystd2) - (1.0 / xstd2))
-        db_dtheta = (cos2t / xstd2) - (cos2t / ystd2)
-        dc_dtheta = -da_dtheta
-
-        da_dxstd = -cost2 / xstd3
-        db_dxstd = -sin2t / xstd3
-        dc_dxstd = -sint2 / xstd3
-
-        da_dystd = -sint2 / ystd3
-        db_dystd = sin2t / ystd3
-        dc_dystd = -cost2 / ystd3
-
-        dg_dflux = g / flux
-        dg_dx_0 = g * ((2.0 * a * xdiff) + (b * ydiff))
-        dg_dy_0 = g * ((b * xdiff) + (2.0 * c * ydiff))
-
-        damp_dxstd = -amplitude / xstd
-        damp_dystd = -amplitude / ystd
-        dexp_dxstd = -exp * (da_dxstd * xdiff2
-                             + db_dxstd * xdiff * ydiff
-                             + dc_dxstd * ydiff2)
-        dexp_dystd = -exp * (da_dystd * xdiff2
-                             + db_dystd * xdiff * ydiff
-                             + dc_dystd * ydiff2)
-        dg_dxstd = damp_dxstd * exp + amplitude * dexp_dxstd
-        dg_dystd = damp_dystd * exp + amplitude * dexp_dystd
-
-        # chain rule for change of variables from sigma to fwhm
-        # std => fwhm * GAUSSIAN_FWHM_TO_SIGMA
-        # dstd/dfwhm => GAUSSIAN_FWHM_TO_SIGMA
-        dg_dxfwhm = dg_dxstd * GAUSSIAN_FWHM_TO_SIGMA
-        dg_dyfwhm = dg_dystd * GAUSSIAN_FWHM_TO_SIGMA
-
-        dg_dtheta = g * (-(da_dtheta * xdiff2 + db_dtheta * xdiff * ydiff
-                           + dc_dtheta * ydiff2))
-        # chain rule for unit change;
-        # theta[rad] => theta[deg] * pi / 180; drad/dtheta = pi / 180
-        dg_dtheta *= np.pi / 180.0
-
-        return [dg_dflux, dg_dx_0, dg_dy_0, dg_dxfwhm, dg_dyfwhm, dg_dtheta]
+        pass
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        # Note that here we need to make sure that x and y are in the same
-        # units otherwise this can lead to issues since rotation is not well
-        # defined.
-        if inputs_unit[self.inputs[0]] != inputs_unit[self.inputs[1]]:
-            msg = "Units of 'x' and 'y' inputs should match"
-            raise UnitsError(msg)
-
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'x_fwhm': inputs_unit[self.inputs[0]],
-                'y_fwhm': inputs_unit[self.inputs[0]],
-                'theta': u.deg,
-                'flux': outputs_unit[self.outputs[0]]}
+        pass
 
 
 class CircularGaussianPSF(Fittable2DModel):
-    r"""
-    A circular 2D Gaussian PSF model.
-
-    This model is evaluated by sampling the 2D Gaussian at the input
-    coordinates. The Gaussian is normalized such that the analytical
-    integral over the entire 2D plane is equal to the total flux.
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak along the x-axis.
-
-    y_0 : float, optional
-        Position of the peak along the y-axis.
-
-    fwhm : float, optional
-        The full width at half maximum (FWHM) of the Gaussian.
-
-    bbox_factor : float, optional
-        The multiple of the standard deviation (sigma) used to define
-        the bounding box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    GaussianPSF, GaussianPRF, CircularGaussianPRF, MoffatPSF
-
-    Notes
-    -----
-    The circular Gaussian function is defined as:
-
-    .. math::
-
-        f(x, y) = \frac{F}{2 \pi \sigma^{2}}
-                  \exp \left( {\frac{-(x - x_{0})^{2} - (y - y_{0})^{2}}
-                             {2 \sigma^{2}}} \right)
-
-    where :math:`F` is the total integrated flux, :math:`(x_{0}, y_{0})`
-    is the position of the peak, and :math:`\sigma` is the standard
-    deviation, respectively.
-
-    The FWHM of the Gaussian is given by:
-
-    .. math::
-
-        \rm{FWHM} = 2 \sigma \sqrt{2 \ln{2}}
-
-    The model is normalized such that:
-
-    .. math::
-
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y) \,dx \,dy = F
-
-    The ``fwhm`` parameter is fixed by default. If you wish to fit this
-    parameter, set the ``fixed`` attribute to `False`, e.g.,::
-
-        >>> from photutils.psf import CircularGaussianPSF
-        >>> model = CircularGaussianPSF()
-        >>> model.fwhm.fixed = False
-
-    By default, the ``fwhm`` parameter is bounded to be strictly
-    positive.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Gaussian_function
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import CircularGaussianPSF
-
-        model = CircularGaussianPSF(flux=71.4, x_0=24.3, y_0=25.2, fwhm=10.1)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -542,17 +204,11 @@ class CircularGaussianPSF(Fittable2DModel):
 
     @property
     def amplitude(self):
-        """
-        The peak amplitude of the Gaussian.
-        """
-        return _gaussian_amplitude(self.flux, self.sigma, self.sigma)
+        pass
 
     @property
     def sigma(self):
-        """
-        Gaussian sigma (standard deviation).
-        """
-        return self.fwhm * GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     def _calc_bounding_box(self, *, factor=5.5):
         """
@@ -631,7 +287,6 @@ class CircularGaussianPSF(Fittable2DModel):
         """
         sigma2 = (fwhm * GAUSSIAN_FWHM_TO_SIGMA) ** 2
 
-        # output units should match the input flux units
         sigma2_norm = sigma2
         if isinstance(sigma2, u.Quantity):
             sigma2_norm = sigma2.value
@@ -642,180 +297,17 @@ class CircularGaussianPSF(Fittable2DModel):
 
     @staticmethod
     def fit_deriv(x, y, flux, x_0, y_0, fwhm):
-        """
-        Calculate the partial derivatives of the 2D Gaussian function
-        with respect to the parameters.
-
-        Parameters
-        ----------
-        x, y : float or array_like
-            The x and y coordinates at which to evaluate the model.
-
-        flux : float
-            Total integrated flux over the entire PSF.
-
-        x_0, y_0 : float
-            Position of the peak along the x and y axes.
-
-        fwhm : float
-            FWHM of the Gaussian.
-
-        Returns
-        -------
-        result : list of `~numpy.ndarray`
-            The list of partial derivatives with respect to each
-            parameter.
-        """
-        return GaussianPSF().fit_deriv(x, y, flux, x_0, y_0, fwhm, fwhm,
-                                       0.0)[:-2]
+        pass
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'fwhm': inputs_unit[self.inputs[0]],
-                'flux': outputs_unit[self.outputs[0]]}
+        pass
 
 
 class GaussianPRF(Fittable2DModel):
-    r"""
-    A 2D Gaussian PSF model integrated over pixels.
-
-    This model is evaluated by integrating the 2D Gaussian over the
-    input coordinate pixels, and is equivalent to assuming the PSF is
-    2D Gaussian at a *sub-pixel* level. Because it is integrated over
-    pixels, this model is considered a PRF instead of a PSF.
-
-    The Gaussian is normalized such that the analytical integral over
-    the entire 2D plane is equal to the total flux.
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak along the x-axis.
-
-    y_0 : float, optional
-        Position of the peak along the y-axis.
-
-    x_fwhm : float, optional
-        The full width at half maximum (FWHM) of the Gaussian along the
-        x axis.
-
-    y_fwhm : float, optional
-        FWHM of the Gaussian along the y axis.
-
-    theta : float, optional
-        The counterclockwise rotation angle either as a float (in
-        degrees) or a `~astropy.units.Quantity` angle (optional).
-
-    bbox_factor : float, optional
-        The multiple of the x and y standard deviations (sigma) used to
-        define the bounding_box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    GaussianPSF, CircularGaussianPSF, CircularGaussianPRF, MoffatPSF
-
-    Notes
-    -----
-    The Gaussian function is defined as:
-
-    .. math::
-
-        f(x, y) =
-            \frac{F}{4}
-            \left[
-                {\rm erf} \left(
-                    \frac{x^\prime + 0.5}{\sqrt{2} \sigma_{x}} \right) -
-                {\rm erf} \left(
-                    \frac{x^\prime - 0.5}{\sqrt{2} \sigma_{x}} \right)
-            \right]
-            \left[
-                {\rm erf} \left(
-                    \frac{y^\prime + 0.5}{\sqrt{2} \sigma_{y}} \right) -
-                {\rm erf} \left(
-                    \frac{y^\prime - 0.5}{\sqrt{2} \sigma_{y}} \right)
-            \right]
-
-    where :math:`F` is the total integrated flux, :math:`\sigma_{x}`
-    and :math:`\sigma_{y}` are the standard deviations along the x
-    and y axes, respectively, and :math:`{\rm erf}` denotes the error
-    function.
-
-    .. math::
-
-        x^\prime = (x - x_0) \cos(\theta) + (y - y_0) \sin(\theta)
-
-        y^\prime = -(x - x_0) \sin(\theta) + (y - y_0) \cos(\theta)
-
-    where :math:`(x_{0}, y_{0})` is the position of the peak and
-    :math:`\theta` is the rotation angle of the Gaussian.
-
-    The FWHMs of the Gaussian along the x and y axes are given by:
-
-    .. math::
-
-        \rm{FWHM}_{x} = 2 \sigma_{x} \sqrt{2 \ln{2}}
-
-        \rm{FWHM}_{y} = 2 \sigma_{y} \sqrt{2 \ln{2}}
-
-    The model is normalized such that:
-
-    .. math::
-
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y) \,dx \,dy = F
-
-    The ``x_fwhm``, ``y_fwhm``, and ``theta`` parameters are fixed by
-    default. If you wish to fit these parameters, set the ``fixed``
-    attribute to `False`, e.g.,::
-
-        >>> from photutils.psf import GaussianPRF
-        >>> model = GaussianPRF()
-        >>> model.x_fwhm.fixed = False
-        >>> model.y_fwhm.fixed = False
-        >>> model.theta.fixed = False
-
-    By default, the ``x_fwhm`` and ``y_fwhm`` parameters are bounded to
-    be strictly positive.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Gaussian_function
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import GaussianPRF
-
-        model = GaussianPRF(flux=71.4, x_0=24.3, y_0=25.2, x_fwhm=10.1,
-                            y_fwhm=5.82, theta=21.7)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -847,24 +339,15 @@ class GaussianPRF(Fittable2DModel):
 
     @property
     def amplitude(self):
-        """
-        The peak amplitude of the Gaussian.
-        """
-        return _gaussian_amplitude(self.flux, self.x_sigma, self.y_sigma)
+        pass
 
     @property
     def x_sigma(self):
-        """
-        Gaussian sigma (standard deviation) along the x-axis.
-        """
-        return self.x_fwhm * GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     @property
     def y_sigma(self):
-        """
-        Gaussian sigma (standard deviation) along the y-axis.
-        """
-        return self.y_fwhm * GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     def _calc_bounding_box(self, *, factor=5.5):
         """
@@ -972,137 +455,13 @@ class GaussianPRF(Fittable2DModel):
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        # Note that here we need to make sure that x and y are in the same
-        # units otherwise this can lead to issues since rotation is not well
-        # defined.
-        if inputs_unit[self.inputs[0]] != inputs_unit[self.inputs[1]]:
-            msg = "Units of 'x' and 'y' inputs should match"
-            raise UnitsError(msg)
-
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'x_fwhm': inputs_unit[self.inputs[0]],
-                'y_fwhm': inputs_unit[self.inputs[0]],
-                'theta': u.deg,
-                'flux': outputs_unit[self.outputs[0]]}
+        pass
 
 
 class CircularGaussianPRF(Fittable2DModel):
-    r"""
-    A circular 2D Gaussian PSF model integrated over pixels.
-
-    This model is evaluated by integrating the 2D Gaussian over the
-    input coordinate pixels, and is equivalent to assuming the PSF is
-    2D Gaussian at a *sub-pixel* level. Because it is integrated over
-    pixels, this model is considered a PRF instead of a PSF.
-
-    The Gaussian is normalized such that the analytical integral over
-    the entire 2D plane is equal to the total flux.
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak along the x-axis.
-
-    y_0 : float, optional
-        Position of the peak along the y-axis.
-
-    fwhm : float, optional
-        The full width at half maximum (FWHM) of the Gaussian.
-
-    bbox_factor : float, optional
-        The multiple of the standard deviation (sigma) used to define
-        the bounding box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    GaussianPRF, GaussianPSF, CircularGaussianPSF, MoffatPSF
-
-    Notes
-    -----
-    The circular Gaussian function is defined as:
-
-    .. math::
-
-        f(x, y) =
-            \frac{F}{4}
-            \left[
-                {\rm erf} \left(
-                    \frac{x - x_0 + 0.5}{\sqrt{2} \sigma} \right) -
-                {\rm erf} \left(
-                    \frac{x - x_0 - 0.5}{\sqrt{2} \sigma} \right)
-            \right]
-            \left[
-                {\rm erf} \left(
-                    \frac{y - y_0 + 0.5}{\sqrt{2} \sigma} \right) -
-                {\rm erf} \left(
-                    \frac{y - y_0 - 0.5}{\sqrt{2} \sigma} \right)
-            \right]
-
-    where :math:`F` is the total integrated flux, :math:`(x_{0},
-    y_{0})` is the position of the peak, :math:`\sigma` is the standard
-    deviation of the Gaussian, and :math:`{\rm erf}` denotes the error
-    function.
-
-    The FWHM of the Gaussian is given by:
-
-    .. math::
-
-        \rm{FWHM} = 2 \sigma \sqrt{2 \ln{2}}
-
-    The model is normalized such that:
-
-    .. math::
-
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y) \,dx \,dy = F
-
-    The ``fwhm`` parameter is fixed by default. If you wish to fit this
-    parameter, set the ``fixed`` attribute to `False`, e.g.,::
-
-        >>> from photutils.psf import CircularGaussianPRF
-        >>> model = CircularGaussianPRF()
-        >>> model.fwhm.fixed = False
-
-    By default, the ``fwhm`` parameter is bounded to be strictly
-    positive.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Gaussian_function
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import CircularGaussianPRF
-
-        model = CircularGaussianPRF(flux=71.4, x_0=24.3, y_0=25.2, fwhm=10.1)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -1123,17 +482,11 @@ class CircularGaussianPRF(Fittable2DModel):
 
     @property
     def amplitude(self):
-        """
-        The peak amplitude of the Gaussian.
-        """
-        return _gaussian_amplitude(self.flux, self.sigma, self.sigma)
+        pass
 
     @property
     def sigma(self):
-        """
-        Gaussian sigma (standard deviation).
-        """
-        return self.fwhm * GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     def _calc_bounding_box(self, *, factor=5.5):
         """
@@ -1226,127 +579,13 @@ class CircularGaussianPRF(Fittable2DModel):
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'fwhm': inputs_unit[self.inputs[0]],
-                'flux': outputs_unit[self.outputs[0]]}
+        pass
 
 
 class CircularGaussianSigmaPRF(Fittable2DModel):
-    r"""
-    A circular 2D Gaussian PSF model integrated over pixels.
-
-    This model is evaluated by integrating the 2D Gaussian over the
-    input coordinate pixels, and is equivalent to assuming the PSF is
-    2D Gaussian at a *sub-pixel* level. Because it is integrated over
-    pixels, this model is considered a PRF instead of a PSF.
-
-    The Gaussian is normalized such that the analytical integral over
-    the entire 2D plane is equal to the total flux.
-
-    This model is equivalent to `CircularGaussianPRF`, but it is
-    parameterized in terms of the standard deviation (sigma) instead of
-    the full width at half maximum (FWHM).
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak in x direction.
-
-    y_0 : float, optional
-        Position of the peak in y direction.
-
-    sigma : float, optional
-        Width of the Gaussian PSF.
-
-    bbox_factor : float, optional
-        The multiple of the standard deviation (sigma) used to define
-        the bounding box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` parent class.
-
-    See Also
-    --------
-    GaussianPSF, GaussianPRF, CircularGaussianPSF, CircularGaussianPRF
-
-    Notes
-    -----
-    The circular Gaussian function is defined as:
-
-    .. math::
-
-        f(x, y) =
-            \frac{F}{4}
-            \left[
-                {\rm erf} \left(\frac{x - x_0 + 0.5}
-                                     {\sqrt{2} \sigma} \right)  -
-                {\rm erf} \left(\frac{x - x_0 - 0.5}
-                                     {\sqrt{2} \sigma} \right)
-            \right]
-            \left[
-                {\rm erf} \left(\frac{y - y_0 + 0.5}
-                                     {\sqrt{2} \sigma} \right) -
-                {\rm erf} \left(\frac{y - y_0 - 0.5}
-                                     {\sqrt{2} \sigma} \right)
-            \right]
-
-    where :math:`F` is the total integrated flux, :math:`(x_{0},
-    y_{0})` is the position of the peak, :math:`\sigma` is the standard
-    deviation of the Gaussian, and :math:`{\rm erf}` denotes the error
-    function.
-
-    The model is normalized such that:
-
-    .. math::
-
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y) \,dx \,dy = F
-
-    The ``sigma`` parameter is fixed by default. If you wish to fit this
-    parameter, set the ``fixed`` attribute to `False`, e.g.,::
-
-        >>> from photutils.psf import CircularGaussianSigmaPRF
-        >>> model = CircularGaussianSigmaPRF()
-        >>> model.sigma.fixed = False
-
-    By default, the ``sigma`` parameter is bounded to be strictly
-    positive.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Gaussian_function
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import CircularGaussianSigmaPRF
-
-        model = CircularGaussianSigmaPRF(flux=71.4, x_0=24.3, y_0=25.2,
-                                         sigma=5.1)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -1367,17 +606,11 @@ class CircularGaussianSigmaPRF(Fittable2DModel):
 
     @property
     def amplitude(self):
-        """
-        The peak amplitude of the Gaussian.
-        """
-        return _gaussian_amplitude(self.flux, self.sigma, self.sigma)
+        pass
 
     @property
     def fwhm(self):
-        """
-        Gaussian FWHM.
-        """
-        return self.sigma / GAUSSIAN_FWHM_TO_SIGMA
+        pass
 
     def _calc_bounding_box(self, *, factor=5.5):
         """
@@ -1466,135 +699,13 @@ class CircularGaussianSigmaPRF(Fittable2DModel):
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        # Note that here we need to make sure that x and y are in the same
-        # units otherwise this can lead to issues since rotation is not well
-        # defined.
-        if inputs_unit[self.inputs[0]] != inputs_unit[self.inputs[1]]:
-            msg = "Units of 'x' and 'y' inputs should match"
-            raise UnitsError(msg)
-
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'sigma': inputs_unit[self.inputs[0]],
-                'flux': outputs_unit[self.outputs[0]]}
+        pass
 
 
 class MoffatPSF(Fittable2DModel):
-    r"""
-    A 2D Moffat PSF model.
-
-    This model is evaluated by sampling the 2D Moffat function at the
-    input coordinates. The Moffat profile is normalized such that the
-    analytical integral over the entire 2D plane is equal to the total
-    flux.
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak along the x-axis.
-
-    y_0 : float, optional
-        Position of the peak along the y-axis.
-
-    alpha : float, optional
-        The characteristic radius of the Moffat profile.
-
-    beta : float, optional
-        The asymptotic power-law slope of the Moffat profile wings at
-        large radial distances. Larger values provide less flux in the
-        profile wings. For large ``beta``, this profile approaches a
-        Gaussian profile. ``beta`` must be greater than 1. If ``beta``
-        is set to 1, then the Moffat profile is a Lorentz function,
-        whose integral is infinite. For this normalized model, if
-        ``beta`` is set to 1, then the profile will be zero everywhere.
-
-    bbox_factor : float, optional
-        The multiple of the FWHM used to define the bounding box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    GaussianPSF, CircularGaussianPSF, GaussianPRF, CircularGaussianPRF
-
-    Notes
-    -----
-    The Moffat profile is defined as:
-
-    .. math::
-
-       f(x, y) = F \frac{\beta - 1}{\pi \alpha^2}
-           \left(1 + \frac{\left(x - x_{0}\right)^{2}
-               + \left(y - y_{0}\right)^{2}}{\alpha^{2}}\right)^{-\beta}
-
-    where :math:`F` is the total integrated flux and :math:`(x_{0},
-    y_{0})` is the position of the peak. Note that :math:`\beta` must be
-    greater than 1.
-
-    The FWHM of the Moffat profile is given by:
-
-    .. math::
-
-        \rm{FWHM} = 2 \alpha \sqrt{2^{1 / \beta} - 1}
-
-    The model is normalized such that, for :math:`\beta > 1`:
-
-    .. math::
-
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y)
-            \,dx \,dy = F
-
-    The ``alpha`` and ``beta`` parameters are fixed by default. If
-    you wish to fit these parameters, set the ``fixed`` attribute to
-    `False`, e.g.,::
-
-        >>> from photutils.psf import MoffatPSF
-        >>> model = MoffatPSF()
-        >>> model.alpha.fixed = False
-        >>> model.beta.fixed = False
-
-    By default, the ``alpha`` parameter is bounded to be strictly
-    positive and the ``beta`` parameter is bounded to be greater than 1.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Moffat_distribution
-
-    .. [2] https://ui.adsabs.harvard.edu/abs/1969A%26A.....3..455M/abstract
-
-    .. [3] https://ned.ipac.caltech.edu/level5/Stetson/Stetson2_2_1.html
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import MoffatPSF
-
-        model = MoffatPSF(flux=71.4, x_0=24.3, y_0=25.2, alpha=5.1, beta=3.2)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -1622,10 +733,7 @@ class MoffatPSF(Fittable2DModel):
 
     @property
     def fwhm(self):
-        """
-        The FWHM of the Moffat profile.
-        """
-        return 2.0 * self.alpha * np.sqrt(2 ** (1.0 / self.beta) - 1)
+        pass
 
     def _calc_bounding_box(self, *, factor=10.0):
         """
@@ -1711,7 +819,6 @@ class MoffatPSF(Fittable2DModel):
         result : `~numpy.ndarray`
             The value of the model evaluated at the input coordinates.
         """
-        # output units should match the input flux units
         alpha2 = alpha.copy()
         if isinstance(alpha, u.Quantity):
             alpha2 = alpha.value
@@ -1722,133 +829,13 @@ class MoffatPSF(Fittable2DModel):
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'alpha': inputs_unit[self.inputs[0]],
-                'flux': outputs_unit[self.outputs[0]]}
+        pass
 
 
 class AiryDiskPSF(Fittable2DModel):
-    r"""
-    A 2D Airy disk PSF model.
-
-    This model is evaluated by sampling the 2D Airy disk function at the
-    input coordinates. The Airy disk profile is normalized such that the
-    analytical integral over the entire 2D plane is equal to the total
-    flux.
-
-    Parameters
-    ----------
-    flux : float, optional
-        Total integrated flux over the entire PSF.
-
-    x_0 : float, optional
-        Position of the peak along the x-axis.
-
-    y_0 : float, optional
-        Position of the peak along the y-axis.
-
-    radius : float, optional
-        The radius of the Airy disk at the first zero.
-
-    bbox_factor : float, optional
-        The multiple of the FWHM used to define the bounding box limits.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    GaussianPSF, CircularGaussianPSF, MoffatPSF
-
-    Notes
-    -----
-    The Airy disk profile is defined as:
-
-    .. math::
-
-        f(r) = \frac{F}{4 \pi (R / R_z)^2}
-               \left[ \frac{2 J_1\left(\frac{\pi r}{R / R_z}\right)}
-                      {\frac{\pi r}{R / R_z}} \right]^2
-
-    where :math:`r` is radial distance from the peak
-
-    .. math::
-
-        r = \sqrt{(x - x_0)^2 + (y - y_0)^2}
-
-    :math:`F` is the total integrated flux,
-    :math:`J_1` is the first order `Bessel function
-    <https://en.wikipedia.org/wiki/Bessel_function>`_ of the first
-    kind, :math:`R` is the input ``radius`` parameter, and :math:`R_z =
-    1.2196698912665045` is the solution to the equation :math:`J_1(\pi
-    R_z) = 0`.
-
-    For an optical system, the radius of the first zero represents
-    the limiting angular resolution. The limiting angular resolution
-    is :math:`R_z \, \lambda / D \approx 1.22 \, \lambda / D`, where
-    :math:`\lambda` is the wavelength of the light and :math:`D` is the
-    diameter of the aperture.
-
-    The full width at half maximum (FWHM) of the Airy disk profile is
-    given by:
-
-    .. math::
-
-        \rm{FWHM} = 1.028993969962188 \, \frac{R}{R_z}
-                  = 0.8436659602162364 \, R
-
-    The model is normalized such that:
-
-    .. math::
-
-        \int_{0}^{2 \pi} \int_{0}^{\infty} f(r) \,r \,dr \,d\theta =
-        \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x, y)
-            \,dx \,dy = F
-
-    The ``radius`` parameter is fixed by default. If you wish to fit
-    this parameter, set the ``fixed`` attribute to `False`, e.g.,::
-
-        >>> from photutils.psf import AiryDiskPSF
-        >>> model = AiryDiskPSF()
-        >>> model.radius.fixed = False
-
-    By default, the ``radius`` parameter is bounded to be strictly
-    positive.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Airy_disk
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from astropy.visualization import simple_norm
-        from photutils.psf import AiryDiskPSF
-
-        model = AiryDiskPSF(flux=71.4, x_0=24.3, y_0=25.2, radius=5)
-        yy, xx = np.mgrid[0:51, 0:51]
-        data = model(xx, yy)
-        norm = simple_norm(data, 'sqrt')
-        fig, ax = plt.subplots()
-        ax.imshow(data, norm=norm, origin='lower')
-    """
 
     flux = Parameter(
         default=1, description='Total integrated flux over the entire PSF.')
@@ -1871,10 +858,7 @@ class AiryDiskPSF(Fittable2DModel):
 
     @property
     def fwhm(self):
-        """
-        The FWHM of the Airy disk profile.
-        """
-        return 2.0 * 1.616339948310703 * self.radius / self._rz / np.pi
+        pass
 
     def _calc_bounding_box(self, *, factor=10.0):
         """
@@ -1953,17 +937,13 @@ class AiryDiskPSF(Fittable2DModel):
         r = np.sqrt((x - x_0) ** 2 + (y - y_0) ** 2) / (radius / self._rz)
 
         if isinstance(r, u.Quantity):
-            # scipy function cannot handle Quantity, so turn into array
             r = r.to_value(u.dimensionless_unscaled)
 
-        # Since r can be zero, we have to take care to treat that case
-        # separately so as not to raise a numpy warning
         z = np.ones(r.shape)
         rt = np.pi * r[r > 0]
         z[r > 0] = (2.0 * j1(rt) / rt) ** 2
 
         if isinstance(flux, u.Quantity):
-            # make z a quantity to allow in-place multiplication
             z <<= u.dimensionless_unscaled
 
         normalization = (4.0 / np.pi) * (radius / self._rz) ** 2
@@ -1976,18 +956,7 @@ class AiryDiskPSF(Fittable2DModel):
 
     @property
     def input_units(self):
-        """
-        The input units of the model.
-        """
-        x_unit = self.x_0.input_unit
-        y_unit = self.y_0.input_unit
-        if x_unit is None and y_unit is None:
-            return None
-
-        return {self.inputs[0]: x_unit, self.inputs[1]: y_unit}
+        pass
 
     def _parameter_units_for_data_units(self, inputs_unit, outputs_unit):
-        return {'x_0': inputs_unit[self.inputs[0]],
-                'y_0': inputs_unit[self.inputs[0]],
-                'radius': inputs_unit[self.inputs[0]],
-                'flux': outputs_unit[self.outputs[0]]}
+        pass

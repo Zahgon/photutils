@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for getting the installed astropy and photutils versions.
-"""
 
 import sys
 from datetime import UTC, datetime
@@ -51,8 +47,6 @@ def _get_date(*, utc=False):
     try:
         now = datetime.now().astimezone() if not utc else datetime.now(UTC)
     except OSError:
-        # System timezone may be unavailable on some configurations;
-        # fall back to UTC
         now = datetime.now(UTC)
     return now.strftime('%Y-%m-%d %H:%M:%S %Z')
 

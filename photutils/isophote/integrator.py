@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for integrating over pixels.
-"""
 
 import math
 
@@ -10,7 +6,6 @@ import numpy as np
 __all__ = ['BILINEAR', 'INTEGRATORS', 'MEAN', 'MEDIAN', 'NEAREST_NEIGHBOR']
 
 
-# integration modes
 NEAREST_NEIGHBOR = 'nearest_neighbor'
 BILINEAR = 'bilinear'
 MEAN = 'mean'
@@ -18,31 +13,6 @@ MEDIAN = 'median'
 
 
 class _Integrator:
-    """
-    Base class that supports different kinds of pixel integration
-    methods.
-
-    Parameters
-    ----------
-    image : 2D `~numpy.ndarray`
-         The image array.
-
-    geometry : `~photutils.isophote.EllipseGeometry` instance
-        Object that encapsulates geometry information about current
-        ellipse.
-
-    angles : list
-        Output list; contains the angle values along the elliptical
-        path.
-
-    radii : list
-        Output list; contains the radius values along the elliptical
-        path.
-
-    intensities : list
-        Output list; contains the extracted intensity values along the
-        elliptical path.
-    """
 
     def __init__(self, image, geometry, angles, radii, intensities):
         self._image = image
@@ -52,7 +22,6 @@ class _Integrator:
         self._radii = radii
         self._intensities = intensities
 
-        # for bounds checking
         self._i_range = range(self._image.shape[1] - 1)
         self._j_range = range(self._image.shape[0] - 1)
 
@@ -147,13 +116,11 @@ class _NearestNeighborIntegrator(_Integrator):
     def integrate(self, radius, phi):
         self._r = radius
 
-        # Get image coordinates of (radius, phi) pixel
         i = int(radius * math.cos(phi + self._geometry.pa)
                 + self._geometry.x0)
         j = int(radius * math.sin(phi + self._geometry.pa)
                 + self._geometry.y0)
 
-        # ignore data point if outside image boundaries
         if (i in self._i_range) and (j in self._j_range):
             sample = self._image[j][i]
 
@@ -174,7 +141,6 @@ class _BiLinearIntegrator(_Integrator):
     def integrate(self, radius, phi):
         self._r = radius
 
-        # Get image coordinates of (radius, phi) pixel
         x_ = radius * math.cos(phi + self._geometry.pa) + self._geometry.x0
         y_ = radius * math.sin(phi + self._geometry.pa) + self._geometry.y0
         i = int(x_)
@@ -182,9 +148,7 @@ class _BiLinearIntegrator(_Integrator):
         fx = x_ - i
         fy = y_ - j
 
-        # ignore data point if outside image boundaries
         if (i in self._i_range) and (j in self._j_range):
-            # in the future, will need to handle masked pixels here
             qx = 1.0 - fx
             qy = 1.0 - fy
 
@@ -214,8 +178,6 @@ class _AreaIntegrator(_Integrator):
     def __init__(self, image, geometry, angles, radii, intensities):
         super().__init__(image, geometry, angles, radii, intensities)
 
-        # build auxiliary bilinear integrator to be used when
-        # sector areas contain a too small number of valid pixels.
         self._bilinear_integrator = INTEGRATORS[BILINEAR](image, geometry,
                                                           angles, radii,
                                                           intensities)
@@ -223,44 +185,30 @@ class _AreaIntegrator(_Integrator):
     def integrate(self, radius, phi):
         self._phi = phi
 
-        # Get image coordinates of the four vertices of the elliptical sector.
         vertex_x, vertex_y = self._geometry.initialize_sector_geometry(phi)
 
         self._sector_area = self._geometry.sector_area
 
-        # step in polar angle to be used by caller next time
-        # when updating the current polar angle `phi` to point
-        # to the next sector.
         self._phistep = self._geometry.sector_angular_width
 
-        # define rectangular image area that encompasses the elliptical
-        # sector. We have to account for rounding of pixel indices.
         i1 = int(min(vertex_x)) - 1
         j1 = int(min(vertex_y)) - 1
         i2 = int(max(vertex_x)) + 1
         j2 = int(max(vertex_y)) + 1
 
-        # polar angle limits for this sector
         phi1, phi2 = self._geometry.polar_angle_sector_limits()
 
-        # ignore data point if the elliptical sector lies
-        # partially, or totally, outside image boundaries
         if (i1 in self._i_range) and (j1 in self._j_range) and \
            (i2 in self._i_range) and (j2 in self._j_range):
 
-            # Scan rectangular image area, compute sample value.
             npix = 0
             accumulator = self.initialize_accumulator()
             for j in range(j1, j2):
                 for i in range(i1, i2):
-                    # Check if polar coordinates of each pixel
-                    # put it inside elliptical sector.
                     rp, phip = self._geometry.to_polar(i, j)
 
-                    # check if inside angular limits
                     if phip < phi2 and phip >= phi1:
 
-                        # check if radius is inside bounding ellipses
                         sma1, sma2 = self._geometry.bounding_ellipses()
                         aux = ((1.0 - self._geometry.eps)
                                / math.sqrt(((1.0 - self._geometry.eps)
@@ -271,21 +219,14 @@ class _AreaIntegrator(_Integrator):
                         r2 = sma2 * aux
 
                         if rp < r2 and rp >= r1:
-                            # update accumulator with pixel value
                             pix_value = self._image[j][i]
                             if pix_value is not np.ma.masked:
                                 accumulator, npix = self.accumulate(
                                     pix_value, accumulator)
 
-            # If 6 or less pixels were sampled, get the bilinear
-            # interpolated value instead.
             if npix in range(7):
-                # must reset integrator to remove older samples.
                 self._bilinear_integrator._reset()
                 self._bilinear_integrator.integrate(radius, phi)
-                # because it was reset, current value is the only one stored
-                # internally in the bilinear integrator instance. Move it
-                # from the internal integrator to this instance.
                 if len(self._bilinear_integrator._intensities) > 0:
                     sample_value = self._bilinear_integrator._intensities[0]
                     self._store_results(phi, radius, sample_value)
@@ -345,7 +286,6 @@ class _MedianIntegrator(_AreaIntegrator):
         return accumulator[int(self._npix / 2)]
 
 
-# Specific integrator subclasses can be instantiated from here.
 INTEGRATORS = {
     NEAREST_NEIGHBOR: _NearestNeighborIntegrator,
     BILINEAR: _BiLinearIntegrator,

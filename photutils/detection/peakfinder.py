@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for finding local peaks in an astronomical image.
-"""
 
 import warnings
 
@@ -56,7 +52,6 @@ def _verify_ring_candidates(data, peak_mask, needs_verify, footprint_bool,
 
     ny, nx = data.shape
     for y, x in zip(y_maybe, x_maybe, strict=True):
-        # Map footprint onto data, clipping to image boundaries
         y0 = y - half
         y1 = y0 + footprint_size
         x0 = x - half
@@ -74,12 +69,10 @@ def _verify_ring_candidates(data, peak_mask, needs_verify, footprint_bool,
         fp_local = footprint_bool[fy0:fy1, fx0:fx1]
         local_max = local[fp_local].max()
 
-        # Footprint extends beyond image: include cval=0.0
         if (fy0 > 0 or fy1 < footprint_size or fx0 > 0
                 or fx1 < footprint_size):
             local_max = max(local_max, 0.0)
 
-        # peak_mask is updated in place
         if data[y, x] == local_max:
             peak_mask[y, x] = True
 
@@ -117,7 +110,6 @@ def _fast_circular_peaks(data, radius):
         Boolean mask where `True` indicates a local maximum within the
         circular region.
     """
-    # Build the circular footprint
     idx = np.arange(-radius, radius + 1)
     radius_sq = radius ** 2
     footprint_size = len(idx)
@@ -125,23 +117,12 @@ def _fast_circular_peaks(data, radius):
     xx, yy = np.meshgrid(idx, idx)
     footprint_bool = (xx ** 2 + yy ** 2) <= radius_sq
 
-    # For even-sized footprints (non-integer radius), scipy's
-    # maximum_filter places the center at index ``footprint_size // 2``
-    # (i.e., the origin is biased by +0.5 pixel). The same convention is
-    # used here so that the fast path is bit-identical to the reference
-    # maximum_filter(footprint=...) result.
     half = footprint_size // 2
 
-    # Circumscribed box (size = footprint_size): contains the footprint.
-    # Any pixel that is the max in this box is definitely the max in the
-    # circular footprint, since circle <= box.
     data_max_box = maximum_filter(data, size=footprint_size, mode='constant',
                                   cval=0.0)
     definite = (data == data_max_box)
 
-    # Inscribed box: fits inside the circle. For even-sized footprints,
-    # the circle center is shifted by 0.5 from the pixel center. We
-    # account for this so the inscribed box stays inside the circle.
     if footprint_size % 2 == 0:
         half_side = int(np.floor(radius / np.sqrt(2) - 0.5))
     else:
@@ -150,16 +131,11 @@ def _fast_circular_peaks(data, radius):
 
     data_max_insc = maximum_filter(data, size=side_insc, mode='constant',
                                    cval=0.0)
-    # Candidates from inscribed box are a superset of true peaks
     candidates = (data == data_max_insc)
 
-    # Ring candidates: max in inscribed box but not in circumscribed
-    # box. These need per-pixel verification against the actual circular
-    # footprint.
     needs_verify = candidates & ~definite
     peak_mask = definite.copy()
 
-    # peak_mask is updated in place
     _verify_ring_candidates(data, peak_mask, needs_verify, footprint_bool,
                             half, footprint_size)
 
@@ -349,8 +325,6 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
         border_width = as_pair('border_width', border_width,
                                lower_bound=(0, 1), upper_bound=data.shape)
 
-    # Remove NaN values to avoid runtime warnings and exclude NaN pixels
-    # from peak detection
     nan_mask = np.isnan(data)
     if np.any(nan_mask):
         data = np.copy(data)  # ndarray
@@ -358,7 +332,6 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
         mask = (nan_mask if mask is None
                 else np.asanyarray(mask) | nan_mask)
 
-    # peak_goodmask: good pixels are True
     if min_separation is not None and min_separation > 0:
         peak_goodmask = _fast_circular_peaks(data, min_separation)
     elif footprint is not None:
@@ -370,7 +343,6 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
                                   cval=0.0)
         peak_goodmask = (data == data_max)
 
-    # Exclude peaks that are masked
     if mask is not None:
         mask = np.asanyarray(mask, dtype=bool)
         if data.shape != mask.shape:
@@ -378,7 +350,6 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
             raise ValueError(msg)
         peak_goodmask = np.logical_and(peak_goodmask, ~mask)
 
-    # Exclude peaks that are too close to the border
     if border_width is not None:
         ny, nx = border_width
         if ny > 0:
@@ -388,7 +359,6 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
             peak_goodmask[:, :nx] = False
             peak_goodmask[:, -nx:] = False
 
-    # Exclude peaks below the threshold
     peak_goodmask = np.logical_and(peak_goodmask, (data > threshold))
 
     y_peaks, x_peaks = peak_goodmask.nonzero()
@@ -409,7 +379,6 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
         y_peaks = y_peaks[idx]
         peak_values = peak_values[idx]
 
-    # Construct the output table
     ids = np.arange(len(x_peaks)) + 1
     colnames = ['id', 'x_peak', 'y_peak', 'peak_value']
     coldata = [ids, x_peaks, y_peaks, peak_values]
@@ -421,14 +390,9 @@ def find_peaks(data, threshold, *, box_size=3, footprint=None, mask=None,
         idx = table.colnames.index('y_peak') + 1
         table.add_column(skycoord_peaks, name='skycoord_peak', index=idx)
 
-    # Perform centroiding
     if centroid_func is not None:
-        # Prevent circular import
         from photutils.centroids import centroid_sources
 
-        # When a footprint is provided, derive the centroid box_size
-        # from the footprint shape so they are consistent. Ensure odd
-        # dimensions for centroid_sources.
         if footprint is not None:
             centroid_box_size = tuple(
                 s if s % 2 else s + 1 for s in footprint.shape)

@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for measuring non-parametric morphologies of sources.
-"""
 
 import numpy as np
 
@@ -80,7 +76,6 @@ def gini(data, mask=None):
     else:
         values = np.ravel(data)
 
-    # Exclude invalid values (NaN, inf)
     values = np.abs(values[np.isfinite(values)])
     npix = values.size
     if npix == 0:

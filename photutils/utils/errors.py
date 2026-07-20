@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for calculating total error arrays.
-"""
 
 import astropy.units as u
 import numpy as np
@@ -184,20 +180,14 @@ def calc_total_error(data, bkg_error, effective_gain):
         data = data.value
         effective_gain = effective_gain.value
 
-    # Do not include source variance where effective_gain = 0
     source_variance = data.copy()
     mask = effective_gain != 0
     source_variance[mask] /= effective_gain[mask]
     source_variance[~mask] = 0.0
 
-    # Do not include source variance where data is negative (note that
-    # effective_gain cannot be negative)
     source_variance = np.maximum(source_variance, 0)
 
     if use_units:
-        # source_variance is calculated to have units of (data.unit)**2
-        # so that it can be added with bkg_error**2 below. The returned
-        # total error will have units of data.unit.
         source_variance <<= unit**2
 
     return np.sqrt(bkg_error**2 + source_variance)

@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for Quantity helpers.
-"""
 
 import astropy.units as u
 import numpy as np
@@ -89,12 +85,9 @@ def process_quantities(values, names):
     """
     units = check_units(values, names)
 
-    # When all values are None, the units set is empty; return unchanged
-    # with unit=None
     if len(units) == 0:
         return values, None
 
-    # Extract the unit and remove it from the return values
     unit = units.pop()
     if unit is not None:
         values = [val.value if val is not None else val for val in values]

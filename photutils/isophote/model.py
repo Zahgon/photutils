@@ -1,8 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for building a model elliptical galaxy image from a list of
-isophotes.
-"""
 
 import numpy as np
 from scipy.interpolate import LSQUnivariateSpline
@@ -67,16 +62,11 @@ def build_ellipse_model(
         msg = 'isolist must not be empty'
         raise ValueError(msg)
 
-    # the target grid is spaced in 0.1 pixel intervals so as
-    # to ensure no gaps will result on the output array.
     finely_spaced_sma = np.arange(
         isolist[0].sma, isolist[-1].sma, sma_interval,
     )
 
-    # interpolate ellipse parameters
 
-    # End points must be discarded, but how many?
-    # This seems to work so far
     nodes = isolist.sma[2:-2]
 
     intens_array = LSQUnivariateSpline(
@@ -103,8 +93,6 @@ def build_ellipse_model(
 
         grad_sma = -grad_array * finely_spaced_sma
 
-        # Return deviations from ellipticity to their original amplitude
-        # meaning
         kwargs_harm = {
             'a3_array': a3_array * grad_sma,
             'b3_array': b3_array * grad_sma,
@@ -114,11 +102,8 @@ def build_ellipse_model(
     else:
         kwargs_harm = {}
 
-    # correct deviations caused by fluctuations in spline solution
     eps_array[np.where(eps_array < 0.0)] = 0.0
 
-    # for each interpolated isophote, generate intensity values on the
-    # output image array
     result, weight = build_ellipse_model_c(
         shape[0],
         shape[1],
@@ -131,13 +116,10 @@ def build_ellipse_model(
         **kwargs_harm,
     )
 
-    # zero weight values must be set to 1.0
     weight[np.where(weight <= 0.0)] = 1.0
 
-    # normalize
     result /= weight
 
-    # fill value
     result[np.where(result == 0.0)] = fill
 
     return result

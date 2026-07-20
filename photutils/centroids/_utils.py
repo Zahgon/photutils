@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Private utility functions for centroiding.
-"""
 
 import warnings
 
@@ -109,8 +105,6 @@ def _process_data_mask(data, mask, *, ndim=2, fill_value=np.nan):
             data = data.copy()
         data[badmask] = fill_value
 
-    # If the input was a MaskedArray, return a plain ndarray; the mask
-    # has already been applied to the data above.
     if is_masked_array:
         data = np.asarray(data)
 
@@ -163,16 +157,11 @@ def _validate_gaussian_inputs(data, mask, error):
         if np.any(error_mask):
             combined_mask |= error_mask
 
-        # Zero error at all invalid pixel positions; copy only if needed
         if np.any(combined_mask):
             error = error.copy()
             error[combined_mask] = 0.0
 
-    # Apply the full combined mask to data once
     if np.any(combined_mask):
-        # The data array may still be the original input object if
-        # no modifications were needed above. We copy here to avoid
-        # mutating the caller's original data.
         data = data.copy()
         data[combined_mask] = 0.0
 
@@ -235,30 +224,22 @@ def _gaussian2d_moments(data):
     amplitude = np.max(data)
     total = np.sum(data)
 
-    # 1st-order moments (centroid)
     x_mean = np.sum(x * data) / total
     y_mean = np.sum(y * data) / total
 
-    # 2nd-order central moments
     dx = x - x_mean
     dy = y - y_mean
     mu_20 = np.sum(dx**2 * data) / total
     mu_02 = np.sum(dy**2 * data) / total
     mu_11 = np.sum(dx * dy * data) / total
 
-    # Covariance matrix
     covar = np.array([[mu_02, mu_11], [mu_11, mu_20]])
 
-    # Eigenvalues in descending order give semimajor/semiminor sigma^2
     eigvals = np.linalg.eigvalsh(covar)[::-1]
     eigvals = np.clip(eigvals, 0, None)
     x_stddev = np.sqrt(eigvals[0])
     y_stddev = np.sqrt(eigvals[1])
 
-    # Orientation angle (radians) between x-axis and the major axis.
-    # When the distribution is nearly isotropic (mu_20 ~ mu_02, mu_11 ~
-    # 0), the angle is undefined; guard against floating-point noise by
-    # returning theta = 0 in that case.
     anisotropy = np.sqrt((mu_20 - mu_02) ** 2 + (2.0 * mu_11) ** 2)
     if anisotropy < 1e-6 * (mu_20 + mu_02):
         theta = 0.0

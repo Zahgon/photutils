@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for generating random (x, y) coordinates.
-"""
 
 import warnings
 
@@ -39,10 +35,6 @@ def apply_separation(xycoords, min_separation):
     n = xycoords.shape[0]
     keep = np.ones(n, dtype=bool)
 
-    # Group pairs by first index for vectorized neighbor removal. Each
-    # pair has i < j (guaranteed by KDTree). Process groups in ascending
-    # first-index order (greedy independent set algorithm): for each
-    # kept point, discard all its higher-index neighbors.
     sorted_idx = pairs[:, 0].argsort(kind='stable')
     pairs_sorted = pairs[sorted_idx]
     unique_i, group_start = np.unique(pairs_sorted[:, 0],
@@ -105,8 +97,6 @@ def make_random_xycoords(size, x_range, y_range, *, min_separation=0.0,
 
     ncoords = size
     if min_separation > 0:
-        # Scale the number of random coordinates to account for
-        # some being discarded due to min_separation
         ncoords *= oversample
 
     rng = np.random.default_rng(seed)

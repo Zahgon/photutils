@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for detecting sources in an image.
-"""
 
 import warnings
 
@@ -201,7 +197,6 @@ def _detect_sources(data, threshold, n_pixels, footprint, inverse_mask, *,
         is `False`, then a 2D `~numpy.ndarray` segmentation image is
         returned. If no sources are found then `None` is returned.
     """
-    # Ignore RuntimeWarning caused by > comparison when data contains NaNs
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', category=RuntimeWarning)
         segment_img = data > threshold
@@ -209,19 +204,12 @@ def _detect_sources(data, threshold, n_pixels, footprint, inverse_mask, *,
     if inverse_mask is not None:
         segment_img &= inverse_mask
 
-    # Return None if threshold was too high to detect any sources
     if np.count_nonzero(segment_img) == 0:
         return None
 
-    # NOTE: recasting segment_img to int and using output=segment_img
-    # gives similar performance
     segment_img, nlabels = ndi_label(segment_img, structure=footprint)
     labels = np.arange(nlabels, dtype=segment_img.dtype) + 1
 
-    # Remove objects with less than n_pixels
-    # NOTE: making cutout images and setting their pixels to 0 is
-    # ~10x faster than using segment_img directly and ~50% faster
-    # than using ndimage.sum_labels.
     slices = find_objects(segment_img)
     segm_labels = []
     segm_slices = []
@@ -238,9 +226,6 @@ def _detect_sources(data, threshold, n_pixels, footprint, inverse_mask, *,
         return None
 
     if relabel:
-        # Relabel the segmentation image with consecutive numbers;
-        # ndimage.label returns segment_img with dtype = np.int32
-        # unless the input array has more than 2**31 - 1 pixels
         nlabels = len(segm_labels)
         if len(labels) != nlabels:
             label_map = np.zeros(np.max(labels) + 1,
@@ -259,7 +244,6 @@ def _detect_sources(data, threshold, n_pixels, footprint, inverse_mask, *,
         segm.__dict__['_deblend_label_map'] = {}
         return segm
 
-    # This is used by deblend_sources
     if len(labels) == 1:
         return None
 

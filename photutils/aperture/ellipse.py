@@ -1,8 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Elliptical and elliptical-annulus apertures in both pixel and sky
-coordinates.
-"""
 
 import math
 
@@ -34,12 +29,6 @@ __all__ = [
 
 @deprecated('3.0', until='4.0')
 class EllipticalMaskMixin:  # pragma: no cover
-    """
-    Mixin class to create masks for elliptical and elliptical-annulus
-    aperture objects.
-
-    .. deprecated:: 3.0
-    """
 
     def to_mask(self, method='exact', subpixels=5):
         """
@@ -107,7 +96,6 @@ class EllipticalMaskMixin:  # pragma: no cover
                                            edges[3], nx, ny, a, b,
                                            theta_rad, use_exact, subpixels)
 
-            # Subtract the inner ellipse for an annulus
             if hasattr(self, 'a_in'):
                 mask -= elliptical_overlap_grid(edges[0], edges[1], edges[2],
                                                 edges[3], nx, ny, self.a_in,
@@ -123,77 +111,14 @@ class EllipticalMaskMixin:  # pragma: no cover
 
     @staticmethod
     def _calc_extents(semimajor_axis, semiminor_axis, theta):
-        """
-        Calculate half of the bounding box extents of an ellipse.
-        """
-        return _calc_ellipse_extents(semimajor_axis, semiminor_axis, theta)
+        pass
 
 
 def _calc_ellipse_extents(semimajor_axis, semiminor_axis, theta):
-    """
-    Calculate half of the bounding box extents of an ellipse.
-    """
-    theta_rad = theta.to(u.radian).value
-    cos_theta = np.cos(theta_rad)
-    sin_theta = np.sin(theta_rad)
-    semimajor_x = semimajor_axis * cos_theta
-    semimajor_y = semimajor_axis * sin_theta
-    semiminor_x = semiminor_axis * -sin_theta
-    semiminor_y = semiminor_axis * cos_theta
-    x_extent = np.sqrt(semimajor_x**2 + semiminor_x**2)
-    y_extent = np.sqrt(semimajor_y**2 + semiminor_y**2)
-
-    return x_extent, y_extent
+    pass
 
 
 class EllipticalAperture(PixelAperture):
-    """
-    An elliptical aperture defined in pixel coordinates.
-
-    The aperture has a single fixed size/shape, but it can have multiple
-    positions (see the ``positions`` input).
-
-    Parameters
-    ----------
-    positions : array_like
-        The pixel coordinates of the aperture center(s) in one of the
-        following formats:
-
-        * single ``(x, y)`` pair as a tuple, list, or `~numpy.ndarray`
-        * tuple, list, or `~numpy.ndarray` of ``(x, y)`` pairs
-
-    a : float
-        The semimajor axis of the ellipse in pixels.
-
-    b : float
-        The semiminor axis of the ellipse in pixels.
-
-    theta : float or `~astropy.units.Quantity`, optional
-        The rotation angle as an angular quantity
-        (`~astropy.units.Quantity` or `~astropy.coordinates.Angle`) or
-        value in radians (as a float) from the positive ``x`` axis. The
-        rotation angle increases counterclockwise.
-
-    Raises
-    ------
-    ValueError : `ValueError`
-        If either axis (``a`` or ``b``) is negative.
-
-    Examples
-    --------
-    >>> from astropy.coordinates import Angle
-    >>> from photutils.aperture import EllipticalAperture
-
-    >>> theta = Angle(80, 'deg')
-    >>> aper = EllipticalAperture([10.0, 20.0], 5.0, 3.0)
-    >>> aper = EllipticalAperture((10.0, 20.0), 5.0, 3.0, theta=theta)
-
-    >>> pos1 = (10.0, 20.0)  # (x, y)
-    >>> pos2 = (30.0, 40.0)
-    >>> pos3 = (50.0, 60.0)
-    >>> aper = EllipticalAperture([pos1, pos2, pos3], 5.0, 3.0)
-    >>> aper = EllipticalAperture((pos1, pos2, pos3), 5.0, 3.0, theta=theta)
-    """
 
     _params = ('positions', 'a', 'b', 'theta')
     positions = PixelPositions('The center pixel position(s).')
@@ -212,55 +137,14 @@ class EllipticalAperture(PixelAperture):
 
     @lazyproperty
     def _xy_extents(self):
-        """
-        The half of the bounding box extents of the ellipse in the x and
-        y directions.
-        """
-        return _calc_ellipse_extents(self.a, self.b, self.theta)
+        pass
 
     @lazyproperty
     def area(self):
-        """
-        The exact geometric area of the aperture shape.
-        """
-        return math.pi * self.a * self.b
+        pass
 
     def _to_patch(self, *, origin=(0, 0), **kwargs):
-        """
-        Return a `~matplotlib.patches.Patch` for the aperture.
-
-        Parameters
-        ----------
-        origin : array_like, optional
-            The ``(x, y)`` position of the origin of the displayed
-            image.
-
-        **kwargs : dict, optional
-            Any keyword arguments accepted by
-            `matplotlib.patches.Patch`.
-
-        Returns
-        -------
-        patch : `~matplotlib.patches.Patch` or list of \
-                `~matplotlib.patches.Patch`
-            A patch for the aperture. If the aperture is scalar then a
-            single `~matplotlib.patches.Patch` is returned, otherwise a
-            list of `~matplotlib.patches.Patch` is returned.
-        """
-        import matplotlib.patches as mpatches
-
-        xy_positions, patch_kwargs = self._define_patch_params(origin=origin,
-                                                               **kwargs)
-
-        angle = self.theta.to(u.deg).value
-        patches = [mpatches.Ellipse(xy_position, 2.0 * self.a, 2.0 * self.b,
-                                    angle=angle, **patch_kwargs)
-                   for xy_position in xy_positions]
-
-        if self.isscalar:
-            return patches[0]
-
-        return patches
+        pass
 
     def _compute_overlap(self, edges, nx, ny, use_exact, subpixels):
         """
@@ -295,112 +179,10 @@ class EllipticalAperture(PixelAperture):
                                        theta_rad, use_exact, subpixels)
 
     def to_sky(self, wcs):
-        """
-        Convert the aperture to a `SkyEllipticalAperture` object defined
-        in celestial coordinates.
-
-        Parameters
-        ----------
-        wcs : WCS object
-            A world coordinate system (WCS) transformation that
-            supports the `astropy shared interface for WCS
-            <https://docs.astropy.org/en/stable/wcs/wcsapi.html>`_
-            (e.g., `astropy.wcs.WCS`, `gwcs.wcs.WCS`).
-
-        Returns
-        -------
-        aperture : `SkyEllipticalAperture` object
-            A `SkyEllipticalAperture` object.
-
-        Notes
-        -----
-        The aperture shape parameters are converted using the local WCS
-        properties (pixel scale, rotation angle) evaluated at the first
-        aperture position. Because aperture objects require scalar shape
-        parameters, only a single reference position is used for the
-        conversion. For apertures with multiple positions used with a
-        WCS that has spatially-varying distortions, this may produce
-        inaccurate results for positions far from the first position.
-        """
-        xpos, ypos = np.transpose(self.positions)
-        positions = wcs.pixel_to_world(xpos, ypos)
-
-        first_pos = np.atleast_2d(self.positions)[0]
-        pixcoord = (float(first_pos[0]), float(first_pos[1]))
-        _, sky_width, sky_height, sky_angle = pixel_ellipse_to_sky_svd(
-            pixcoord, wcs, 2 * self.a, 2 * self.b, self.theta.to(u.rad).value)
-
-        a = Angle(sky_width / 2, 'arcsec')
-        b = Angle(sky_height / 2, 'arcsec')
-        return SkyEllipticalAperture(positions=positions, a=a, b=b,
-                                     theta=sky_angle)
+        pass
 
 
 class EllipticalAnnulus(PixelAperture):
-    r"""
-    An elliptical annulus aperture defined in pixel coordinates.
-
-    The aperture has a single fixed size/shape, but it can have multiple
-    positions (see the ``positions`` input).
-
-    Parameters
-    ----------
-    positions : array_like
-        The pixel coordinates of the aperture center(s) in one of the
-        following formats:
-
-        * single ``(x, y)`` pair as a tuple, list, or `~numpy.ndarray`
-        * tuple, list, or `~numpy.ndarray` of ``(x, y)`` pairs
-
-    a_in : float
-        The inner semimajor axis of the elliptical annulus in pixels.
-
-    a_out : float
-        The outer semimajor axis of the elliptical annulus in pixels.
-
-    b_out : float
-        The outer semiminor axis of the elliptical annulus in pixels.
-
-    b_in : `None` or float, optional
-        The inner semiminor axis of the elliptical annulus in pixels.
-        If `None`, then the inner semiminor axis is calculated as:
-
-        .. math::
-
-            b_{in} = b_{out} \left(\frac{a_{in}}{a_{out}}\right)
-
-    theta : float or `~astropy.units.Quantity`, optional
-        The rotation angle as an angular quantity
-        (`~astropy.units.Quantity` or `~astropy.coordinates.Angle`) or
-        value in radians (as a float) from the positive ``x`` axis. The
-        rotation angle increases counterclockwise.
-
-    Raises
-    ------
-    ValueError : `ValueError`
-        If inner semimajor axis (``a_in``) is greater than outer semimajor
-        axis (``a_out``).
-
-    ValueError : `ValueError`
-        If either the inner semimajor axis (``a_in``) or the outer semiminor
-        axis (``b_out``) is negative.
-
-    Examples
-    --------
-    >>> from astropy.coordinates import Angle
-    >>> from photutils.aperture import EllipticalAnnulus
-
-    >>> theta = Angle(80, 'deg')
-    >>> aper = EllipticalAnnulus([10.0, 20.0], 3.0, 8.0, 5.0)
-    >>> aper = EllipticalAnnulus((10.0, 20.0), 3.0, 8.0, 5.0, theta=theta)
-
-    >>> pos1 = (10.0, 20.0)  # (x, y)
-    >>> pos2 = (30.0, 40.0)
-    >>> pos3 = (50.0, 60.0)
-    >>> aper = EllipticalAnnulus([pos1, pos2, pos3], 3.0, 8.0, 5.0)
-    >>> aper = EllipticalAnnulus((pos1, pos2, pos3), 3.0, 8.0, 5.0,
-    ...                          theta=theta)
-    """
 
     _params = ('positions', 'a_in', 'a_out', 'b_in', 'b_out', 'theta')
     positions = PixelPositions('The center pixel position(s).')
@@ -434,60 +216,14 @@ class EllipticalAnnulus(PixelAperture):
 
     @lazyproperty
     def _xy_extents(self):
-        """
-        The half of the bounding box extents of the outer ellipse in the
-        x and y directions.
-        """
-        return _calc_ellipse_extents(self.a_out, self.b_out, self.theta)
+        pass
 
     @lazyproperty
     def area(self):
-        """
-        The exact geometric area of the aperture shape.
-        """
-        return math.pi * (self.a_out * self.b_out - self.a_in * self.b_in)
+        pass
 
     def _to_patch(self, *, origin=(0, 0), **kwargs):
-        """
-        Return a `~matplotlib.patches.Patch` for the aperture.
-
-        Parameters
-        ----------
-        origin : array_like, optional
-            The ``(x, y)`` position of the origin of the displayed
-            image.
-
-        **kwargs : dict, optional
-            Any keyword arguments accepted by
-            `matplotlib.patches.Patch`.
-
-        Returns
-        -------
-        patch : `~matplotlib.patches.Patch` or list of \
-                `~matplotlib.patches.Patch`
-            A patch for the aperture. If the aperture is scalar then a
-            single `~matplotlib.patches.Patch` is returned, otherwise a
-            list of `~matplotlib.patches.Patch` is returned.
-        """
-        import matplotlib.patches as mpatches
-
-        xy_positions, patch_kwargs = self._define_patch_params(origin=origin,
-                                                               **kwargs)
-
-        patches = []
-        angle = self.theta.to(u.deg).value
-        for xy_position in xy_positions:
-            patch_inner = mpatches.Ellipse(xy_position, 2.0 * self.a_in,
-                                           2.0 * self.b_in, angle=angle)
-            patch_outer = mpatches.Ellipse(xy_position, 2.0 * self.a_out,
-                                           2.0 * self.b_out, angle=angle)
-            path = self._make_annulus_path(patch_inner, patch_outer)
-            patches.append(mpatches.PathPatch(path, **patch_kwargs))
-
-        if self.isscalar:
-            return patches[0]
-
-        return patches
+        pass
 
     def _compute_overlap(self, edges, nx, ny, use_exact, subpixels):
         """
@@ -528,86 +264,10 @@ class EllipticalAnnulus(PixelAperture):
         return overlap
 
     def to_sky(self, wcs):
-        """
-        Convert the aperture to a `SkyEllipticalAnnulus` object defined
-        in celestial coordinates.
-
-        Parameters
-        ----------
-        wcs : WCS object
-            A world coordinate system (WCS) transformation that
-            supports the `astropy shared interface for WCS
-            <https://docs.astropy.org/en/stable/wcs/wcsapi.html>`_
-            (e.g., `astropy.wcs.WCS`, `gwcs.wcs.WCS`).
-
-        Returns
-        -------
-        aperture : `SkyEllipticalAnnulus` object
-            A `SkyEllipticalAnnulus` object.
-
-        Notes
-        -----
-        The aperture shape parameters are converted using the local WCS
-        properties (pixel scale, rotation angle) evaluated at the first
-        aperture position. Because aperture objects require scalar shape
-        parameters, only a single reference position is used for the
-        conversion. For apertures with multiple positions used with a
-        WCS that has spatially-varying distortions, this may produce
-        inaccurate results for positions far from the first position.
-        """
-        xpos, ypos = np.transpose(self.positions)
-        positions = wcs.pixel_to_world(xpos, ypos)
-
-        first_pos = np.atleast_2d(self.positions)[0]
-        pixcoord = (float(first_pos[0]), float(first_pos[1]))
-        theta_rad = self.theta.to(u.rad).value
-
-        _, sky_w_out, sky_h_out, sky_angle = pixel_ellipse_to_sky_svd(
-            pixcoord, wcs, 2 * self.a_out, 2 * self.b_out, theta_rad)
-        _, sky_w_in, sky_h_in, _ = pixel_ellipse_to_sky_svd(
-            pixcoord, wcs, 2 * self.a_in, 2 * self.b_in, theta_rad)
-
-        a_out = Angle(sky_w_out / 2, 'arcsec')
-        b_out = Angle(sky_h_out / 2, 'arcsec')
-        a_in = Angle(sky_w_in / 2, 'arcsec')
-        b_in = Angle(sky_h_in / 2, 'arcsec')
-        return SkyEllipticalAnnulus(positions=positions, a_in=a_in,
-                                    a_out=a_out, b_out=b_out,
-                                    b_in=b_in, theta=sky_angle)
+        pass
 
 
 class SkyEllipticalAperture(SkyAperture):
-    """
-    An elliptical aperture defined in sky coordinates.
-
-    The aperture has a single fixed size/shape, but it can have multiple
-    positions (see the ``positions`` input).
-
-    Parameters
-    ----------
-    positions : `~astropy.coordinates.SkyCoord`
-        The celestial coordinates of the aperture center(s). This can be
-        either scalar coordinates or an array of coordinates.
-
-    a : scalar `~astropy.units.Quantity`
-        The semimajor axis of the ellipse in angular units.
-
-    b : scalar `~astropy.units.Quantity`
-        The semiminor axis of the ellipse in angular units.
-
-    theta : scalar `~astropy.units.Quantity`, optional
-        The position angle (in angular units) of the ellipse semimajor
-        axis. For a right-handed world coordinate system, the position
-        angle increases counterclockwise from North (PA=0).
-
-    Examples
-    --------
-    >>> from astropy.coordinates import SkyCoord
-    >>> import astropy.units as u
-    >>> from photutils.aperture import SkyEllipticalAperture
-    >>> positions = SkyCoord(ra=[10.0, 20.0], dec=[30.0, 40.0], unit='deg')
-    >>> aper = SkyEllipticalAperture(positions, 1.0*u.arcsec, 0.5*u.arcsec)
-    """
 
     _params = ('positions', 'a', 'b', 'theta')
     positions = SkyCoordPositions('The center position(s) in sky coordinates.')
@@ -669,49 +329,6 @@ class SkyEllipticalAperture(SkyAperture):
 
 
 class SkyEllipticalAnnulus(SkyAperture):
-    r"""
-    An elliptical annulus aperture defined in sky coordinates.
-
-    The aperture has a single fixed size/shape, but it can have multiple
-    positions (see the ``positions`` input).
-
-    Parameters
-    ----------
-    positions : `~astropy.coordinates.SkyCoord`
-        The celestial coordinates of the aperture center(s). This can be
-        either scalar coordinates or an array of coordinates.
-
-    a_in : scalar `~astropy.units.Quantity`
-        The inner semimajor axis in angular units.
-
-    a_out : scalar `~astropy.units.Quantity`
-        The outer semimajor axis in angular units.
-
-    b_out : scalar `~astropy.units.Quantity`
-        The outer semiminor axis in angular units.
-
-    b_in : `None` or scalar `~astropy.units.Quantity`
-        The inner semiminor axis in angular units. If `None`, then the
-        inner semiminor axis is calculated as:
-
-        .. math::
-
-            b_{in} = b_{out} \left(\frac{a_{in}}{a_{out}}\right)
-
-    theta : scalar `~astropy.units.Quantity`, optional
-        The position angle (in angular units) of the ellipse semimajor
-        axis. For a right-handed world coordinate system, the position
-        angle increases counterclockwise from North (PA=0).
-
-    Examples
-    --------
-    >>> from astropy.coordinates import SkyCoord
-    >>> import astropy.units as u
-    >>> from photutils.aperture import SkyEllipticalAnnulus
-    >>> positions = SkyCoord(ra=[10.0, 20.0], dec=[30.0, 40.0], unit='deg')
-    >>> aper = SkyEllipticalAnnulus(positions, 0.5*u.arcsec, 2.0*u.arcsec,
-    ...                             1.0*u.arcsec)
-    """
 
     _params = ('positions', 'a_in', 'a_out', 'b_in', 'b_out', 'theta')
     positions = SkyCoordPositions('The center position(s) in sky coordinates.')

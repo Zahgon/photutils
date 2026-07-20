@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for image segmentation.
-"""
 
 import numpy as np
 from astropy.convolution import Gaussian2DKernel
@@ -147,15 +143,11 @@ def _mask_to_mirrored_value(data, replace_mask, xycenter, *, mask=None):
     xmirror = 2 * int(xycenter[0] + 0.5) - xmasked
     ymirror = 2 * int(xycenter[1] + 0.5) - ymasked
 
-    # Find mirrored pixels that are outside the image
     badmask = ((xmirror < 0) | (ymirror < 0) | (xmirror >= data.shape[1])
                | (ymirror >= data.shape[0]))
 
-    # Remove them from the set of replace_mask pixels and set them to
-    # zero
     if np.any(badmask):
         outdata[ymasked[badmask], xmasked[badmask]] = 0.0
-        # Remove the badmask pixels from pixels to be replaced
         goodmask = ~badmask
         ymasked = ymasked[goodmask]
         xmasked = xmasked[goodmask]
@@ -164,8 +156,6 @@ def _mask_to_mirrored_value(data, replace_mask, xycenter, *, mask=None):
 
     outdata[ymasked, xmasked] = outdata[ymirror, xmirror]
 
-    # Find mirrored pixels that are masked and replace_mask pixels that are
-    # mirrored to other replace_mask pixels. Set them both to zero.
     mirror_mask = replace_mask[ymirror, xmirror]
     if mask is not None:
         mirror_mask |= mask[ymirror, xmirror]

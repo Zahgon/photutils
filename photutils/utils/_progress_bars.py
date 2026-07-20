@@ -1,13 +1,7 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for progress bars.
-"""
 
-# pylint: disable-next=E0611
 from photutils.utils._optional_deps import HAS_TQDM
 
 
-# Allow iterable to be passed positionally
 def add_progress_bar(iterable=None, *, desc=None, total=None, text=False):
     """
     Add a progress bar for an iterable.
@@ -51,7 +45,6 @@ def add_progress_bar(iterable=None, *, desc=None, total=None, text=False):
             from tqdm import tqdm
         else:
             try:
-                # pylint: disable-next=W0611
                 from ipywidgets import FloatProgress  # noqa: F401
                 from tqdm.auto import tqdm
             except ImportError:
@@ -63,8 +56,6 @@ def add_progress_bar(iterable=None, *, desc=None, total=None, text=False):
     return iterable
 
 
-# Define tqdm as a dummy class if it is not available.
-# This is needed to use tqdm as a context manager with multiprocessing.
 try:
     from tqdm.auto import tqdm
 except ImportError:

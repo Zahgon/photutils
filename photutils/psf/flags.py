@@ -1,8 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for working with PSF photometry flags, including centralized flag
-definitions and decoding utilities.
-"""
 
 from dataclasses import dataclass
 from typing import ClassVar
@@ -17,23 +12,6 @@ __all__ = ['PSF_FLAGS', 'decode_psf_flags']
 
 @dataclass(frozen=True)
 class _PSFFlagDefinition:
-    """
-    A single PSF flag definition.
-
-    Attributes
-    ----------
-    bit_value : int
-        The bit value (power of 2) for this flag.
-
-    name : str
-        Short name for the flag (used in decode_psf_flags).
-
-    description : str
-        Brief description of what this flag indicates.
-
-    detailed_description : str
-        Detailed description for use in docstrings.
-    """
 
     bit_value: int
     name: str
@@ -42,27 +20,7 @@ class _PSFFlagDefinition:
 
 
 class _PSFFlags:
-    """
-    Centralized definition of PSF photometry flags.
 
-    This class provides a single source of truth for all PSF flag
-    definitions, including bit values, names, and descriptions. It
-    enables consistent flag handling across the PSF photometry codebase
-    and supports dynamic docstring generation.
-
-    Examples
-    --------
-    >>> from photutils.psf.flags import _PSFFlags
-    >>> flags = _PSFFlags()
-    >>> flags.N_PIXELS_FIT_PARTIAL
-    1
-    >>> flags.get_name(1)
-    'n_pixels_fit_partial'
-    >>> flags.get_description(8)
-    'possible non-convergence'
-    """
-
-    # Define all PSF flags with their properties
     FLAG_DEFINITIONS: ClassVar = [
         _PSFFlagDefinition(
             bit_value=1,
@@ -154,26 +112,21 @@ class _PSFFlags:
         ),
     ]
 
-    # Remove in 4.0
     _DEPRECATED_FLAG_NAMES: ClassVar = {
         'npixfit_partial': 'n_pixels_fit_partial',
     }
 
-    # Remove in 4.0
     _DEPRECATED_CONSTANT_NAMES: ClassVar = {
         'NPIXFIT_PARTIAL': 'N_PIXELS_FIT_PARTIAL',
     }
 
     def __init__(self):
         for flag_def in self.FLAG_DEFINITIONS:
-            # Create uppercase constants (e.g., N_PIXELS_FIT_PARTIAL = 1)
             setattr(self, flag_def.name.upper(), flag_def.bit_value)
 
-        # Create lookup dictionaries for efficient access
         self._bit_to_def = {fd.bit_value: fd for fd in self.FLAG_DEFINITIONS}
         self._name_to_def = {fd.name: fd for fd in self.FLAG_DEFINITIONS}
 
-    # Remove in 4.0
     def __getattr__(self, name):
         return deprecated_getattr(self, name,
                                   self._DEPRECATED_CONSTANT_NAMES,
@@ -181,148 +134,36 @@ class _PSFFlags:
 
     @property
     def all_flags(self):
-        """
-        Return all flag definitions.
-        """
-        return self.FLAG_DEFINITIONS.copy()
+        pass
 
     @property
     def bit_values(self):
-        """
-        Return all bit values.
-        """
-        return [fd.bit_value for fd in self.FLAG_DEFINITIONS]
+        pass
 
     @property
     def names(self):
-        """
-        Return all flag names.
-        """
-        return [fd.name for fd in self.FLAG_DEFINITIONS]
+        pass
 
     @property
     def flag_dict(self):
-        """
-        Return dictionary mapping bit values to names.
-        """
-        return {fd.bit_value: fd.name for fd in self.FLAG_DEFINITIONS}
+        pass
 
     def get_definition(self, identifier):
-        """
-        Get flag definition by bit value or name.
-
-        Parameters
-        ----------
-        identifier : int or str
-            Either the bit value (int) or name (str) of the flag.
-
-        Returns
-        -------
-        definition : `_PSFFlagDefinition`
-            The flag definition.
-
-        Raises
-        ------
-        KeyError
-            If the identifier is not found.
-        """
-        if isinstance(identifier, int):
-            if identifier not in self._bit_to_def:
-                msg = f'No flag with bit value {identifier}'
-                raise KeyError(msg)
-            return self._bit_to_def[identifier]
-
-        if isinstance(identifier, str):
-            # Remove in 4.0
-            if identifier in self._DEPRECATED_FLAG_NAMES:
-                import warnings
-
-                from astropy.utils.exceptions import AstropyDeprecationWarning
-
-                new_name = self._DEPRECATED_FLAG_NAMES[identifier]
-                warnings.warn(
-                    f"The flag name '{identifier}' is deprecated "
-                    f"in version 3.0. Use '{new_name}' instead. "
-                    'It will be removed in version 4.0.',
-                    AstropyDeprecationWarning,
-                    stacklevel=2,
-                )
-                identifier = new_name
-
-            if identifier not in self._name_to_def:
-                msg = f"No flag with name '{identifier}'"
-                raise KeyError(msg)
-            return self._name_to_def[identifier]
-
-        msg = 'identifier must be int (bit value) or str (name)'
-        raise TypeError(msg)
+        pass
 
     def get_name(self, bit_value):
-        """
-        Get flag name from bit value.
-
-        Parameters
-        ----------
-        bit_value : int
-            The bit value of the flag.
-
-        Returns
-        -------
-        name : str
-            The name of the flag.
-        """
-        return self.get_definition(bit_value).name
+        pass
 
     def get_bit_value(self, name):
-        """
-        Get flag bit value from name.
-
-        Parameters
-        ----------
-        name : str
-            The name of the flag.
-
-        Returns
-        -------
-        bit_value : int
-            The bit value of the flag.
-        """
-        return self.get_definition(name).bit_value
+        pass
 
     def get_description(self, bit_value):
-        """
-        Get flag description from bit value.
-
-        Parameters
-        ----------
-        bit_value : int
-            The bit value of the flag.
-
-        Returns
-        -------
-        description : str
-            The brief description of the flag.
-        """
-        return self.get_definition(bit_value).description
+        pass
 
     def get_detailed_description(self, bit_value):
-        """
-        Get detailed flag description from bit value.
-
-        Parameters
-        ----------
-        bit_value : int
-            The bit value of the flag.
-
-        Returns
-        -------
-        detailed_description : str
-            The detailed description of the flag.
-        """
-        return self.get_definition(bit_value).detailed_description
+        pass
 
 
-# Create a singleton instance for global use
 PSF_FLAGS = _PSFFlags()
 
 
@@ -349,11 +190,9 @@ def _update_decode_docstring(func):
 
     docstring = func.__doc__
 
-    # Look for the placeholder text
     placeholder = '<flag descriptions>'
 
     if placeholder in docstring:
-        # Generate the flag descriptions
         flag_descriptions = ['']
 
         indent = ' ' * 4
@@ -364,7 +203,6 @@ def _update_decode_docstring(func):
             line = f"{indent}- ``'{name}'`` : bit {bit_val}, {desc}"
             flag_descriptions.append(line)
 
-        # Replace the placeholder with the flag descriptions
         flag_text = '\n'.join(flag_descriptions)
         new_docstring = docstring.replace(placeholder, flag_text)
         func.__doc__ = new_docstring
@@ -375,7 +213,6 @@ def _update_decode_docstring(func):
 @_update_decode_docstring
 @deprecated_positional_kwargs(since='3.0', until='4.0')
 def decode_psf_flags(flags, return_bit_values=False):
-    # numpydoc ignore: RT05
     """
     Decode PSF photometry bit flags into individual components.
 
@@ -469,7 +306,6 @@ def decode_psf_flags(flags, return_bit_values=False):
     Source 3: n_pixels_fit_partial, no_covariance, too_few_pixels, \
 non_finite_position, non_finite_flux
     """
-    # Get flag definitions from centralized source
     flag_definitions = PSF_FLAGS.flag_dict
 
     def _decode_single_flag(flag_value):
@@ -493,15 +329,11 @@ non_finite_position, non_finite_flux
                     active_flags.append(description)
         return active_flags
 
-    # Handle both single values and arrays
     if np.isscalar(flags):
         return _decode_single_flag(flags)
 
-    # Convert to numpy array for consistent handling
     flags_array = np.asarray(flags)
     if flags_array.ndim == 0:
-        # Handle 0-d arrays (scalar arrays)
         return _decode_single_flag(flags_array.item())
 
-    # Handle 1-d or higher dimensional arrays
     return [_decode_single_flag(flag) for flag in flags_array.flat]

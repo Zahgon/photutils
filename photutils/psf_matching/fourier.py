@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for matching PSFs using Fourier methods.
-"""
 
 import numpy as np
 from astropy.utils.decorators import deprecated
@@ -141,18 +137,13 @@ def make_kernel(source_psf, target_psf, *, window=None, regularization=1e-4):
     source_otf = fft2(source_psf)
     target_otf = fft2(target_psf)
 
-    # Note: the following calculations are performed in the Fourier
-    # domain with the DC component at the corner of the array (standard
-    # FFT layout).
 
-    # Regularized division to avoid dividing by near-zero values
     abs_source_otf = np.abs(source_otf)
     max_otf = np.max(abs_source_otf)
     mask = abs_source_otf > regularization * max_otf
     ratio = np.zeros_like(source_otf)  # dtype='complex128' from fft2
     ratio[mask] = target_otf[mask] / source_otf[mask]
 
-    # Apply a window function in frequency space
     if window is not None:
         ratio = _apply_window_to_fourier(ratio, window, target_psf.shape)
 
@@ -374,7 +365,6 @@ def make_wiener_kernel(source_psf, target_psf, *, regularization=1e-4,
         msg = 'regularization must be a positive number.'
         raise ValueError(msg)
 
-    # Validate and build the penalty term
     if penalty is None:
         penalty_array = None
     elif isinstance(penalty, str):
@@ -402,7 +392,6 @@ def make_wiener_kernel(source_psf, target_psf, *, regularization=1e-4,
                'numpy array.')
         raise ValueError(msg)
 
-    # Validate that PSF is large enough for the penalty
     if penalty_array is not None:
         penalty_shape = penalty_array.shape
         psf_shape = source_psf.shape
@@ -419,20 +408,14 @@ def make_wiener_kernel(source_psf, target_psf, *, regularization=1e-4,
     source_power = np.abs(source_otf) ** 2
 
     if penalty_array is not None:
-        # Frequency-dependent regularization
         penalty_otf = _convert_psf_to_otf(penalty_array, source_psf.shape)
         reg_term = regularization * np.abs(penalty_otf) ** 2
     else:
-        # Wiener (Tikhonov; scalar/zero-order) regularization.
-        # This is frequency-independent and expressed as a fraction of
-        # the peak power in the source OTF
         reg_term = regularization * np.max(source_power)
 
-    # Compute the Wiener-regularized kernel in Fourier space
     kernel_otf = (target_otf * np.conj(source_otf)
                   / (source_power + reg_term))
 
-    # Apply a window function in frequency space
     if window is not None:
         kernel_otf = _apply_window_to_fourier(
             kernel_otf, window, target_psf.shape)

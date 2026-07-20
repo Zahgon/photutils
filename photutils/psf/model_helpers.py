@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for making PSF models.
-"""
 
 import contextlib
 import re
@@ -130,8 +126,6 @@ def make_psf_model(model, *, x_name=None, y_name=None, flux_name=None,
 
     if x_name is None:
         x_model = _InverseShift(0, name='x_position')
-        # "offset" is the _InverseShift parameter name;
-        # the x inverse shift model is always the first submodel
         x_name = 'offset_0'
     else:
         if x_name not in input_model.param_names:
@@ -143,8 +137,6 @@ def make_psf_model(model, *, x_name=None, y_name=None, flux_name=None,
 
     if y_name is None:
         y_model = _InverseShift(0, name='y_position')
-        # "offset" is the _InverseShift parameter name;
-        # the y inverse shift model is always the second submodel
         y_name = 'offset_1'
     else:
         if y_name not in input_model.param_names:
@@ -160,9 +152,6 @@ def make_psf_model(model, *, x_name=None, y_name=None, flux_name=None,
 
     if flux_name is None:
         psf_model *= Const2D(1.0, name='flux')
-        # "amplitude" is the Const2D parameter name;
-        # the flux scaling is always the last component (prior to
-        # normalization)
         flux_name = psf_model.param_names[-1]
     else:
         flux_name = _shift_model_param(input_model, flux_name, shift=2)
@@ -179,24 +168,19 @@ def make_psf_model(model, *, x_name=None, y_name=None, flux_name=None,
 
         psf_model *= Const2D(1.0 / integral, name='normalization_scaling')
 
-    # fix all the output model parameters that are not x, y, or flux
     for name in psf_model.param_names:
         psf_model.fixed[name] = name not in (x_name, y_name, flux_name)
 
-    # final check that the x, y, and flux parameter names are in the
-    # output model
     names = (x_name, y_name, flux_name)
     for name in names:
         if name not in psf_model.param_names:
             msg = f'{name!r} parameter name not found in the output model'
             raise ValueError(msg)
 
-    # set the parameter names for the PSF photometry classes
     psf_model.x_name = x_name
     psf_model.y_name = y_name
     psf_model.flux_name = flux_name
 
-    # set aliases
     psf_model.x_0 = getattr(psf_model, x_name)
     psf_model.y_0 = getattr(psf_model, y_name)
     psf_model.flux = getattr(psf_model, flux_name)
@@ -205,10 +189,6 @@ def make_psf_model(model, *, x_name=None, y_name=None, flux_name=None,
 
 
 class _InverseShift(Shift):
-    """
-    A model that is the inverse of the normal
-    `astropy.modeling.functional_models.Shift` model.
-    """
 
     @staticmethod
     def evaluate(x, offset):
@@ -216,12 +196,7 @@ class _InverseShift(Shift):
 
     @staticmethod
     def fit_deriv(x, offset):
-        """
-        One dimensional Shift model derivative with respect to
-        parameter.
-        """
-        d_offset = -np.ones_like(x) + offset * 0.0
-        return [d_offset]
+        pass
 
 
 def _integrate_model(model, *, x_name=None, y_name=None, dx=50, dy=50,
@@ -302,12 +277,10 @@ def _integrate_model(model, *, x_name=None, y_name=None, dx=50, dy=50,
     xvals = np.linspace(xc - hx, xc + hx, nxpts)
     yvals = np.linspace(yc - hy, yc + hy, nypts)
 
-    # evaluate the model on the subsampled grid
     data = model(xvals.reshape(-1, 1), yvals.reshape(1, -1))
     if isinstance(data, Quantity):
         data = data.value
 
-    # now integrate over the subsampled grid (first over x, then over y)
     int_func = trapezoid
 
     return int_func([int_func(row, xvals) for row in data], yvals)
@@ -315,11 +288,9 @@ def _integrate_model(model, *, x_name=None, y_name=None, dx=50, dy=50,
 
 def _shift_model_param(model, param_name, *, shift=2):
     if isinstance(model, CompoundModel):
-        # for CompoundModel, add "shift" to the parameter suffix
         out = re.search(r'(.*)_([\d]*)$', param_name)
         new_name = out.groups()[0] + '_' + str(int(out.groups()[1]) + 2)
     else:
-        # simply add the shift to the parameter name
         new_name = param_name + '_' + str(shift)
 
     return new_name
@@ -367,10 +338,8 @@ def grid_from_epsfs(epsfs, grid_xypos=None, meta=None):  # pragma: no cover
     GriddedPSFModel: `photutils.psf.GriddedPSFModel`
         The gridded PSF model created from the input EPSFs.
     """
-    # prevent circular imports
     from photutils.psf import GriddedPSFModel, ImagePSF
 
-    # optional, to store fiducial from input if `grid_xypos` is None
     x_0s = []
     y_0s = []
     data_arrs = []
@@ -380,37 +349,28 @@ def grid_from_epsfs(epsfs, grid_xypos=None, meta=None):  # pragma: no cover
     origin = None
     flux = None
 
-    # make sure, if provided, that ``grid_xypos`` is the same length as
-    # ``epsfs``
     if grid_xypos is not None and len(grid_xypos) != len(epsfs):
         msg = 'grid_xypos must be the same length as epsfs'
         raise ValueError(msg)
 
-    # loop over input once
     for i, epsf in enumerate(epsfs):
 
-        # check input type
         if not isinstance(epsf, ImagePSF):
             msg = 'All input epsfs must be of type ImagePSF'
             raise TypeError(msg)
 
-        # get data array from EPSF
         data_arrs.append(epsf.data)
 
         if i == 0:
             oversampling = epsf.oversampling
 
-            # same for fill value and flux, grid will have a single value
-            # so it should be the same for all input, and error if not.
             fill_value = epsf.fill_value
 
-            # check that origins are the same
             if grid_xypos is None:
                 origin = epsf.origin
 
             flux = epsf.flux
 
-            # if there's a unit, those should also all be the same
             with contextlib.suppress(AttributeError):
                 dat_unit = epsf.data.unit
         else:
@@ -448,16 +408,11 @@ def grid_from_epsfs(epsfs, grid_xypos=None, meta=None):  # pragma: no cover
             x_0s.append(epsf.x_0.value)
             y_0s.append(epsf.y_0.value)
 
-            # also check that origin is the same, if using x_0s and y_0s
-            # from input
             if np.all(epsf.origin != origin):
                 msg = ('If using (x_0, y_0) as fiducial point, origin must '
                        'match for each input EPSF')
                 raise ValueError(msg)
 
-    # if not supplied, use from x_0, y_0 of input EPSFs as fiducuals
-    # these are checked when GriddedPSFModel is created to make sure they
-    # are actually on a grid.
     if grid_xypos is None:
         grid_xypos = list(zip(x_0s, y_0s, strict=True))
 
@@ -465,7 +420,6 @@ def grid_from_epsfs(epsfs, grid_xypos=None, meta=None):  # pragma: no cover
 
     if meta is None:
         meta = {}
-    # add required keywords to meta
     meta['grid_xypos'] = grid_xypos
     meta['oversampling'] = oversampling
     meta['fill_value'] = fill_value

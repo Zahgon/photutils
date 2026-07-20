@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for rounding numpy arrays.
-"""
 
 import numpy as np
 

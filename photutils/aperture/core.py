@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Base aperture classes.
-"""
 
 import abc
 import inspect
@@ -20,9 +16,6 @@ __all__ = ['Aperture', 'PixelAperture', 'SkyAperture']
 
 
 class Aperture(metaclass=abc.ABCMeta):
-    """
-    Abstract base class for all apertures.
-    """
 
     _params = ()
 
@@ -41,7 +34,6 @@ class Aperture(metaclass=abc.ABCMeta):
         kwargs = {}
         for param in self._params:
             if param == 'positions':
-                # Slice the positions array
                 kwargs[param] = getattr(self, param)[index]
             else:
                 kwargs[param] = getattr(self, param)
@@ -52,15 +44,7 @@ class Aperture(metaclass=abc.ABCMeta):
             yield self.__getitem__(i)
 
     def _positions_str(self, *, prefix=None):
-        if isinstance(self, PixelAperture):
-            return np.array2string(self.positions, separator=', ',
-                                   prefix=prefix)
-
-        if isinstance(self, SkyAperture):
-            return repr(self.positions)
-
-        msg = 'Aperture must be a subclass of PixelAperture or SkyAperture'
-        raise TypeError(msg)
+        pass
 
     def __repr__(self):
         prefix = f'{self.__class__.__name__}'
@@ -99,22 +83,14 @@ class Aperture(metaclass=abc.ABCMeta):
         self_params = list(self._params)
         other_params = list(other._params)
 
-        # Check that both have identical parameters
         if self_params != other_params:
             return False
 
-        # Now check the parameter values.
-        # Note that Quantity comparisons allow for different units if they
-        # are directly convertible (e.g., 1.0 * u.deg == 60.0 * u.arcmin)
         try:
             for param in self_params:
-                # np.any is used for SkyCoord array comparisons
                 if np.any(getattr(self, param) != getattr(other, param)):
                     return False
         except TypeError:
-            # TypeError is raised from SkyCoord comparison when they do
-            # not have equivalent frames. Here return False instead of
-            # the TypeError.
             return False
 
         return True
@@ -127,14 +103,7 @@ class Aperture(metaclass=abc.ABCMeta):
 
     @property
     def _lazyproperties(self):
-        """
-        A list of all class lazyproperties (even in superclasses).
-        """
-        def islazyproperty(obj):
-            return isinstance(obj, lazyproperty)
-
-        return [i[0] for i in inspect.getmembers(self.__class__,
-                                                 predicate=islazyproperty)]
+        pass
 
     def copy(self):
         """
@@ -159,13 +128,7 @@ class Aperture(metaclass=abc.ABCMeta):
 
     @lazyproperty
     def shape(self):
-        """
-        The shape of the instance.
-        """
-        if isinstance(self.positions, SkyCoord):
-            return self.positions.shape
-
-        return self.positions.shape[:-1]
+        pass
 
     @lazyproperty
     def isscalar(self):
@@ -176,21 +139,10 @@ class Aperture(metaclass=abc.ABCMeta):
 
 
 class PixelAperture(Aperture):
-    """
-    Abstract base class for apertures defined in pixel coordinates.
-    """
 
     @lazyproperty
     def _default_patch_properties(self):
-        """
-        A dictionary of default matplotlib.patches.Patch properties.
-        """
-        mpl_params = {}
-
-        # matplotlib.patches.Patch default is ``fill=True``
-        mpl_params['fill'] = False
-
-        return mpl_params
+        pass
 
     @staticmethod
     def _translate_mask_method(method, subpixels, *, rectangle=False):
@@ -224,7 +176,6 @@ class PixelAperture(Aperture):
             msg = f'Invalid mask method: {method}'
             raise ValueError(msg)
 
-        # Remove when rectangular apertures support "exact" method
         if rectangle and method == 'exact':
             method = 'subpixel'
             subpixels = 32
@@ -258,59 +209,19 @@ class PixelAperture(Aperture):
 
     @lazyproperty
     def _positions(self):
-        """
-        The aperture positions, always as a 2D ndarray.
-        """
-        return np.atleast_2d(self.positions)
+        pass
 
     @lazyproperty
     def _bbox(self):
-        """
-        The minimal bounding box for the aperture, always as a list of
-        `~photutils.aperture.BoundingBox` instances.
-        """
-        x_delta, y_delta = self._xy_extents
-        xmin = self._positions[:, 0] - x_delta
-        xmax = self._positions[:, 0] + x_delta
-        ymin = self._positions[:, 1] - y_delta
-        ymax = self._positions[:, 1] + y_delta
-
-        return [BoundingBox.from_float(x0, x1, y0, y1)
-                for x0, x1, y0, y1 in zip(xmin, xmax, ymin, ymax, strict=True)]
+        pass
 
     @lazyproperty
     def bbox(self):
-        """
-        The minimal bounding box for the aperture.
-
-        If the aperture is scalar then a single
-        `~photutils.aperture.BoundingBox` is returned, otherwise a list
-        of `~photutils.aperture.BoundingBox` is returned.
-        """
-        if self.isscalar:
-            return self._bbox[0]
-
-        return self._bbox
+        pass
 
     @lazyproperty
     def _centered_edges(self):
-        """
-        A list of ``(xmin, xmax, ymin, ymax)`` tuples, one for each
-        position, of the pixel edges after recentering the aperture at
-        the origin.
-
-        These pixel edges are used by the low-level `photutils.geometry`
-        functions.
-        """
-        edges = []
-        for position, bbox in zip(self._positions, self._bbox, strict=True):
-            xmin = bbox.ixmin - 0.5 - position[0]
-            xmax = bbox.ixmax - 0.5 - position[0]
-            ymin = bbox.iymin - 0.5 - position[1]
-            ymax = bbox.iymax - 0.5 - position[1]
-            edges.append((xmin, xmax, ymin, ymax))
-
-        return edges
+        pass
 
     @property
     @abc.abstractmethod
@@ -334,98 +245,7 @@ class PixelAperture(Aperture):
         """
 
     def area_overlap(self, data, *, mask=None, method='exact', subpixels=5):
-        """
-        Return the area of overlap between the data and the aperture.
-
-        This method takes into account the aperture mask method, masked
-        data pixels (``mask`` keyword), and partial/no overlap of the
-        aperture with the data. In other words, it returns the area that
-        used to compute the aperture sum (assuming identical inputs).
-
-        Use the `area` method to calculate the exact analytical area of
-        the aperture shape.
-
-        Parameters
-        ----------
-        data : array_like or `~astropy.units.Quantity`
-            A 2D array.
-
-        mask : array_like (bool), optional
-            A boolean mask with the same shape as ``data`` where a
-            `True` value indicates the corresponding element of ``data``
-            is masked. Masked data are excluded from the area overlap.
-
-        method : {'exact', 'center', 'subpixel'}, optional
-            The method used to determine the overlap of the aperture
-            on the pixel grid. Not all options are available for all
-            aperture types. Note that the more precise methods are
-            generally slower. The following methods are available:
-
-            * ``'exact'`` (default):
-              The exact fractional overlap of the aperture and each
-              pixel is calculated. The aperture weights will contain
-              values between 0 and 1.
-
-            * ``'center'``:
-              A pixel is considered to be entirely in or out of the
-              aperture depending on whether its center is in or out of
-              the aperture. The aperture weights will contain values
-              only of 0 (out) and 1 (in).
-
-            * ``'subpixel'``:
-              A pixel is divided into subpixels (see the ``subpixels``
-              keyword), each of which are considered to be entirely in
-              or out of the aperture depending on whether its center is
-              in or out of the aperture. If ``subpixels=1``, this method
-              is equivalent to ``'center'``. The aperture weights will
-              contain values between 0 and 1.
-
-        subpixels : int, optional
-            For the ``'subpixel'`` method, resample pixels by this
-            factor in each dimension. That is, each pixel is divided
-            into ``subpixels**2`` subpixels. This keyword is ignored
-            unless ``method='subpixel'``.
-
-        Returns
-        -------
-        areas : float or array_like
-            The area (in pixels**2) of overlap between the data and the
-            aperture.
-
-        See Also
-        --------
-        area
-        """
-        apermasks = self.to_mask(method=method, subpixels=subpixels)
-        if self.isscalar:
-            apermasks = (apermasks,)
-
-        if mask is not None:
-            mask = np.asarray(mask)
-            if mask.shape != data.shape:
-                msg = 'mask and data must have the same shape'
-                raise ValueError(msg)
-
-        areas = []
-        for apermask in apermasks:
-            slc_large, slc_small = apermask.get_overlap_slices(data.shape)
-
-            # If the aperture does not overlap the data, return np.nan
-            if slc_large is None:
-                area = np.nan
-            else:
-                aper_weights = apermask.data[slc_small]
-                if mask is not None:
-                    aper_weights[mask[slc_large]] = 0.0
-                area = np.sum(aper_weights)
-
-            areas.append(area)
-
-        areas = np.array(areas)
-        if self.isscalar:
-            return areas[0]
-
-        return areas
+        pass
 
     @deprecated_positional_kwargs(since='3.0', until='4.0')
     def to_mask(self, method='exact', subpixels=5):
@@ -602,7 +422,6 @@ class PixelAperture(Aperture):
                 msg = 'error and data must have the same shape'
                 raise ValueError(msg)
 
-        # Check Quantity inputs
         unit = {getattr(arr, 'unit', None) for arr in (data, error)
                 if arr is not None}
         if len(unit) > 1:
@@ -610,7 +429,6 @@ class PixelAperture(Aperture):
                    'the same units')
             raise ValueError(msg)
 
-        # Strip data and error units for performance
         unit = unit.pop()
         if unit is not None:
             unit = data.unit
@@ -630,14 +448,12 @@ class PixelAperture(Aperture):
              aper_weights,
              pixel_mask) = apermask._get_overlap_cutouts(data.shape, mask=mask)
 
-            # No overlap of the aperture with the data
             if slc_large is None:
                 aperture_sums.append(np.nan)
                 aperture_sum_errs.append(np.nan)
                 continue
 
             with warnings.catch_warnings():
-                # Ignore multiplication with non-finite data values
                 warnings.simplefilter('ignore', RuntimeWarning)
 
                 values = (data[slc_large] * aper_weights)[pixel_mask]
@@ -650,7 +466,6 @@ class PixelAperture(Aperture):
         aperture_sums = np.array(aperture_sums)
         aperture_sum_errs = np.array(aperture_sum_errs)
 
-        # Apply units
         if unit is not None:
             aperture_sums <<= unit
             aperture_sum_errs <<= unit
@@ -659,62 +474,10 @@ class PixelAperture(Aperture):
 
     @staticmethod
     def _make_annulus_path(patch_inner, patch_outer):
-        """
-        Define a matplotlib annulus path from two patches.
-
-        This preserves the cubic Bézier curves (CURVE4) of the aperture
-        paths.
-        """
-        import matplotlib.path as mpath
-
-        path_inner = patch_inner.get_path()
-        transform_inner = patch_inner.get_transform()
-        path_inner = transform_inner.transform_path(path_inner)
-
-        path_outer = patch_outer.get_path()
-        transform_outer = patch_outer.get_transform()
-        path_outer = transform_outer.transform_path(path_outer)
-
-        verts_inner = path_inner.vertices[:-1][::-1]
-        verts_inner = np.concatenate((verts_inner, [verts_inner[-1]]))
-
-        verts = np.vstack((path_outer.vertices, verts_inner))
-        codes = np.hstack((path_outer.codes, path_inner.codes))
-
-        return mpath.Path(verts, codes)
+        pass
 
     def _define_patch_params(self, *, origin=(0, 0), **kwargs):
-        """
-        Define the aperture patch position and set any default
-        matplotlib patch keywords (e.g., ``fill=False``).
-
-        Parameters
-        ----------
-        origin : array_like, optional
-            The ``(x, y)`` position of the origin of the displayed
-            image.
-
-        **kwargs : dict, optional
-            Any keyword arguments accepted by
-            `matplotlib.patches.Patch`.
-
-        Returns
-        -------
-        xy_positions : `~numpy.ndarray`
-            The aperture patch positions.
-
-        patch_params : dict
-            Any keyword arguments accepted by
-            `matplotlib.patches.Patch`.
-        """
-        xy_positions = deepcopy(self._positions)
-        xy_positions[:, 0] -= origin[0]
-        xy_positions[:, 1] -= origin[1]
-
-        patch_params = self._default_patch_properties.copy()
-        patch_params.update(kwargs)
-
-        return xy_positions, patch_params
+        pass
 
     @abc.abstractmethod
     def _to_patch(self, *, origin=(0, 0), **kwargs):
@@ -742,43 +505,7 @@ class PixelAperture(Aperture):
 
     @deprecated_positional_kwargs(since='3.0', until='4.0')
     def plot(self, ax=None, origin=(0, 0), **kwargs):
-        """
-        Plot the aperture on a matplotlib `~matplotlib.axes.Axes`
-        instance.
-
-        Parameters
-        ----------
-        ax : `matplotlib.axes.Axes` or `None`, optional
-            The matplotlib axes on which to plot. If `None`, then the
-            current `~matplotlib.axes.Axes` instance is used.
-
-        origin : array_like, optional
-            The ``(x, y)`` position of the origin of the displayed
-            image.
-
-        **kwargs : dict, optional
-            Any keyword arguments accepted by
-            `matplotlib.patches.Patch`.
-
-        Returns
-        -------
-        patch : list of `~matplotlib.patches.Patch`
-            A list of matplotlib patches for the plotted aperture. The
-            patches can be used, for example, when adding a plot legend.
-        """
-        import matplotlib.pyplot as plt
-
-        if ax is None:
-            ax = plt.gca()
-
-        patches = self._to_patch(origin=origin, **kwargs)
-        if self.isscalar:
-            patches = (patches,)
-
-        for patch in patches:
-            ax.add_patch(patch)
-
-        return patches
+        pass
 
     @abc.abstractmethod
     def to_sky(self, wcs):
@@ -802,10 +529,6 @@ class PixelAperture(Aperture):
 
 
 class SkyAperture(Aperture):
-    """
-    Abstract base class for all apertures defined in celestial
-    coordinates.
-    """
 
     @abc.abstractmethod
     def to_pixel(self, wcs):

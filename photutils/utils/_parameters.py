@@ -1,24 +1,9 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for parameter validation.
-"""
 
 import numpy as np
 from astropy.stats import SigmaClip
 
 
 class SigmaClipSentinelDefault:
-    """
-    A sentinel object to indicate the default value for sigma_clip.
-
-    Parameters
-    ----------
-    sigma : float, optional
-        The number of standard deviations for the clipping limit.
-
-    maxiters : int, optional
-        The maximum number of sigma-clipping iterations.
-    """
 
     def __init__(self, *, sigma=3.0, maxiters=10):
         self.sigma = sigma
@@ -137,8 +122,6 @@ def as_pair(name, value, *, lower_bound=None, upper_bound=None,
         if len(upper_bound) != 2:
             msg = 'upper_bound must contain only 2 elements'
             raise ValueError(msg)
-        # If value is larger than upper_bound, set to upper_bound;
-        # upper_bound is typically set to an image shape
         value = np.array((min(value[0], upper_bound[0]),
                           min(value[1], upper_bound[1])))
 

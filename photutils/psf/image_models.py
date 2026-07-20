@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Image-based PSF models.
-"""
 
 import copy
 
@@ -16,114 +12,6 @@ __all__ = ['ImagePSF']
 
 
 class ImagePSF(Fittable2DModel):
-    """
-    A model for a 2D image PSF.
-
-    This class takes 2D image data and computes the values of the model
-    at arbitrary locations, including fractional pixel positions, within
-    the image using spline interpolation provided by
-    :py:class:`~scipy.interpolate.RectBivariateSpline`.
-
-    The model has three model parameters: an image intensity scaling
-    factor (``flux``) which is applied to the input image, and two
-    positional parameters (``x_0`` and ``y_0``) indicating the location
-    of a feature in the coordinate grid on which the model is evaluated.
-
-    Parameters
-    ----------
-    data : 2D `~numpy.ndarray`
-        Array containing the 2D image. The length of the x and y axes
-        must both be at least 4. All elements of the input image data
-        must be finite. By default, the PSF peak is assumed to be
-        located at the center of the input image (see the ``origin``
-        keyword). Please see the Notes section below for details on the
-        normalization of the input image data.
-
-    flux : float, optional
-        The total flux of the source, assuming the input image
-        was properly normalized.
-
-    x_0, y_0 : float
-        The x and y positions of a feature in the image in the output
-        coordinate grid on which the model is evaluated. Typically, this
-        refers to the position of the PSF peak, which is assumed to be
-        located at the center of the input image (see the ``origin``
-        keyword).
-
-    origin : tuple of 2 float or None, optional
-        The ``(x, y)`` coordinate with respect to the input image data
-        array that represents the reference pixel of the input data.
-
-        The reference ``origin`` pixel will be placed at the model
-        ``x_0`` and ``y_0`` coordinates in the output coordinate system
-        on which the model is evaluated.
-
-        Most typically, the input PSF should be centered in the input
-        image, and thus the origin should be set to the central pixel of
-        the ``data`` array.
-
-        If the origin is set to `None`, then the origin will be set to
-        the center of the ``data`` array (``(npix - 1) / 2.0``).
-
-    oversampling : int or array_like (int), optional
-        The integer oversampling factor(s) of the input PSF image. If
-        ``oversampling`` is a scalar then it will be used for both axes.
-        If ``oversampling`` has two elements, they must be in ``(y, x)``
-        order.
-
-    fill_value : float, optional
-        The value to use for points outside the input pixel grid. The
-        default is 0.0.
-
-    **kwargs : dict, optional
-        Additional optional keyword arguments to be passed to the
-        `astropy.modeling.Model` base class.
-
-    See Also
-    --------
-    GriddedPSFModel : A model for a grid of ePSF models.
-
-    Notes
-    -----
-    The fitted PSF model flux represents the total flux of the source,
-    assuming the input image was properly normalized. This flux is
-    determined as a multiplicative scale factor applied to the input
-    image PSF, after accounting for any oversampling. Theoretically,
-    the sum of all values in the PSF image over an infinite grid should
-    equal 1.0 (assuming no oversampling). However, when the PSF is
-    represented over a finite region, the sum of the values may be less
-    than 1.0. For oversampled PSF images, the normalization should be
-    adjusted so that the sum of the array values equals the product
-    of the oversampling factors (e.g., oversampling squared if the
-    oversampling is the same along both axes). If the input image only
-    covers a finite region of the PSF, the sum may again be less than
-    the product of the oversampling factors. Correction factors based on
-    the encircled or ensquared energy of the PSF can be used to estimate
-    the proper scaling for the finite region of the input PSF image and
-    ensure correct flux normalization.
-
-    Examples
-    --------
-    In this simple example, we create a PSF image model from a Circular
-    Gaussian PSF. In this case, one should use the `CircularGaussianPSF`
-    model directly as a PSF model. However, this example demonstrates
-    how to create an image PSF model from an input image.
-
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from photutils.psf import CircularGaussianPSF, ImagePSF
-
-        gaussian_psf = CircularGaussianPSF(x_0=12, y_0=12, fwhm=3.2)
-        yy, xx = np.mgrid[:25, :25]
-        psf_data = gaussian_psf(xx, yy)
-        psf_model = ImagePSF(psf_data, x_0=12, y_0=12, flux=10)
-        data = psf_model(xx, yy)
-        fig, ax = plt.subplots()
-        ax.imshow(data, origin='lower')
-    """
 
     flux = Parameter(default=1,
                      description='Intensity scaling factor of the image.')
@@ -161,7 +49,6 @@ class ImagePSF(Fittable2DModel):
             msg = 'All elements of input data must be finite'
             raise ValueError(msg)
 
-        # this is required by RectBivariateSpline for kx=3, ky=3
         if np.any(np.array(data.shape) < 4):
             msg = 'The length of the x and y axes must both be at least 4'
             raise ValueError(msg)
@@ -224,49 +111,15 @@ class ImagePSF(Fittable2DModel):
 
     @property
     def shape(self):
-        """
-        The shape of the (oversampled) PSF data array.
-
-        Returns
-        -------
-        shape : tuple
-            The shape of the (oversampled) PSF data array.
-        """
-        return self.data.shape
+        pass
 
     @property
     def origin(self):
-        """
-        A 1D `~numpy.ndarray` (x, y) pixel coordinates within the
-        model's 2D image of the origin of the coordinate system.
-
-        The reference ``origin`` pixel will be placed at the model
-        ``x_0`` and ``y_0`` coordinates in the output coordinate system
-        on which the model is evaluated.
-
-        Most typically, the input PSF should be centered in the input
-        image, and thus the origin should be set to the central pixel of
-        the ``data`` array.
-
-        If the origin is set to `None`, then the origin will be set to
-        the center of the ``data`` array (``(npix - 1) / 2.0``).
-        """
-        return self._origin
+        pass
 
     @origin.setter
     def origin(self, origin):
-        if origin is None:
-            origin = (np.array(self.data.shape) - 1.0) / 2.0
-            origin = origin[::-1]  # flip to (x, y) order
-        else:
-            origin = np.asarray(origin)
-            if origin.ndim != 1 or len(origin) != 2:
-                msg = 'origin must be 1D and have 2-elements'
-                raise ValueError(msg)
-            if not np.all(np.isfinite(origin)):
-                msg = 'All elements of origin must be finite'
-                raise ValueError(msg)
-        self._origin = origin
+        pass
 
     @lazyproperty
     def interpolator(self):
@@ -286,7 +139,6 @@ class ImagePSF(Fittable2DModel):
         """
         x = np.arange(self.data.shape[1])
         y = np.arange(self.data.shape[0])
-        # RectBivariateSpline expects the data to be in (x, y) axis order
         return RectBivariateSpline(x, y, self.data.T, kx=3, ky=3, s=0)
 
     def _calc_bounding_box(self):
@@ -301,9 +153,6 @@ class ImagePSF(Fittable2DModel):
         """
         dy, dx = np.array(self.data.shape) / 2 / self.oversampling
 
-        # apply the origin shift
-        # if origin is None, the origin is set to the center of the
-        # image and the shift is 0
         xshift = np.array(self.data.shape[1] - 1) / 2 - self.origin[0]
         yshift = np.array(self.data.shape[0] - 1) / 2 - self.origin[1]
         xshift /= self.oversampling[1]
@@ -366,9 +215,6 @@ class ImagePSF(Fittable2DModel):
         evaluated_model = flux * self.interpolator(xi, yi, grid=False)
 
         if self.fill_value is not None:
-            # set pixels that are outside the input pixel grid to the
-            # fill_value to avoid extrapolation; these bounds match the
-            # RegularGridInterpolator bounds
             ny, nx = self.data.shape
             invalid = (xi < 0) | (xi > nx - 1) | (yi < 0) | (yi > ny - 1)
             evaluated_model[invalid] = self.fill_value

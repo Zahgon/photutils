@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for interpolating data.
-"""
 
 import numpy as np
 from scipy.spatial import cKDTree
@@ -13,111 +9,6 @@ __all__ = ['ShepardIDWInterpolator']
 
 
 class ShepardIDWInterpolator:
-    """
-    Class to perform Inverse Distance Weighted (IDW) interpolation.
-
-    This interpolator uses a modified version of `Shepard's method
-    <https://en.wikipedia.org/wiki/Inverse_distance_weighting>`_ (see
-    the Notes section for details).
-
-    Parameters
-    ----------
-    coordinates : float, 1D array_like, or NxM array_like
-        Coordinates of the known data points. In general, it is expected
-        that these coordinates are in a form of an NxM-like array where
-        N is the number of points and M is dimension of the coordinate
-        space. When M=1 (1D space), then the ``coordinates`` parameter
-        may be entered as a 1D array or, if only one data point is
-        available, ``coordinates`` can be a scalar number representing
-        the 1D coordinate of the data point.
-
-        .. note::
-            If the dimensionality of ``coordinates`` is larger than 2,
-            e.g., if it is of the form N1 x N2 x N3 x ... x Nn x M, then
-            it will be flattened to form an array of size NxM where N =
-            N1 * N2 * ... * Nn.
-
-    values : float or 1D array_like
-        Values of the data points corresponding to each coordinate
-        provided in ``coordinates``. In general a 1D array is expected.
-        When a single data point is available, then ``values`` can be a
-        scalar number.
-
-        .. note::
-            If the dimensionality of ``values`` is larger than 1 then it
-            will be flattened.
-
-    weights : float or 1D array_like, optional
-        Weights to be associated with each data value. These weights, if
-        provided, will be combined with inverse distance weights (see
-        the Notes section for details). When ``weights`` is `None`
-        (default), then only inverse distance weights will be used. When
-        provided, this input parameter must have the same form as
-        ``values``.
-
-    leafsize : float, optional
-        The number of points at which the k-d tree algorithm switches
-        over to brute-force. ``leafsize`` must be positive. See
-        `scipy.spatial.cKDTree` for further information.
-
-    Notes
-    -----
-    This interpolator uses a slightly modified version of `Shepard's
-    method <https://en.wikipedia.org/wiki/Inverse_distance_weighting>`_.
-    The essential difference is the introduction of a "regularization"
-    parameter (``reg``) that is used when computing the inverse distance
-    weights:
-
-    .. math::
-
-        w_i = 1 / (d(x, x_i)^{power} + r)
-
-    By supplying a positive regularization parameter one can avoid
-    singularities at the locations of the data points as well as control
-    the "smoothness" of the interpolation (e.g., make the weights of the
-    neighbors less varied). The "smoothness" of interpolation can also
-    be controlled by the power parameter (``power``).
-
-    Examples
-    --------
-    This class can be instantiated using the following syntax::
-
-        >>> from photutils.utils import ShepardIDWInterpolator as idw
-
-    Example of interpolating 1D data::
-
-        >>> import numpy as np
-        >>> rng = np.random.default_rng(0)
-        >>> x = rng.random(100)  # 100 random values
-        >>> y = np.sin(x)
-        >>> f = idw(x, y)
-        >>> float(f(0.4))  # doctest: +FLOAT_CMP
-        0.38937843420912366
-        >>> float(np.sin(0.4))  # doctest: +FLOAT_CMP
-        0.3894183423086505
-
-        >>> xi = rng.random(4)  # 4 random values
-        >>> xi  # doctest: +FLOAT_CMP
-        array([0.47998792, 0.23237292, 0.80188058, 0.92353016])
-        >>> f(xi)  # doctest: +FLOAT_CMP
-        array([0.46577097, 0.22837422, 0.71856662, 0.80125391])
-        >>> np.sin(xi)  # doctest: +FLOAT_CMP
-        array([0.46176846, 0.23028731, 0.71866503, 0.7977353 ])
-
-    NOTE: In the last example, ``xi`` may be a ``Nx1`` array instead of
-    a 1D vector.
-
-    Example of interpolating 2D data::
-
-        >>> rng = np.random.default_rng(0)
-        >>> pos = rng.random((1000, 2))
-        >>> val = np.sin(pos[:, 0] + pos[:, 1])
-        >>> f = idw(pos, val)
-        >>> float(f([0.5, 0.6]))  # doctest: +FLOAT_CMP
-        0.8948257014687874
-        >>> float(np.sin(0.5 + 0.6))  # doctest: +FLOAT_CMP
-        0.8912073600614354
-    """
 
     @deprecated_positional_kwargs(since='3.0', until='4.0')
     def __init__(self, coordinates, values, weights=None, leafsize=10):
@@ -239,14 +130,12 @@ class ShepardIDWInterpolator:
 
         positions = np.asanyarray(positions)
         if positions.ndim == 0:
-            # Assume we have a single 1D coordinate
             if self.coords_ndim != 1:
                 msg = ('The dimensionality of the input position does '
                        'not match the dimensionality of the coordinates '
                        'used to initialize the interpolator.')
                 raise ValueError(msg)
         elif positions.ndim == 1:
-            # Assume we have a single point
             if self.coords_ndim not in (1, positions.shape[-1]):
                 msg = ('The input position was provided as a 1D array, '
                        'but its length does not match the dimensionality '
@@ -270,46 +159,28 @@ class ShepardIDWInterpolator:
         if dtype is None:
             dtype = self.values.dtype
 
-        # distances and idx have shape (n_positions, n_neighbors). Mask
-        # for valid (finite) distances; invalid entries arise when
-        # n_neighbors exceeds the number of known data points.
         valid = np.isfinite(distances)
 
-        # Replace non-finite distances and out-of-bound indices with
-        # safe values so that vectorized indexing and arithmetic do not
-        # raise errors; the ``valid`` mask zeroes them out later.
         safe_distances = np.where(valid, distances, 1.0)
         safe_idx = np.where(valid, idx, 0)
 
-        # Inverse distance weights: w_i = 1 / (d_i^power + reg) The
-        # errstate context suppresses divide-by-zero warnings that occur
-        # when a query point coincides with a data point (distance = 0
-        # and reg = 0); these are handled by the conf_dist override.
         with np.errstate(invalid='ignore', divide='ignore'):
             weights = np.where(valid,
                                1.0 / (safe_distances ** power
                                       + regularization),
                                0.0)
 
-            # Apply external (user-supplied) weights
             if self.weights is not None:
                 weights *= np.where(valid, self.weights[safe_idx], 0.0)
 
-            # Gather neighbor values and compute the weighted average
             neighbor_values = self.values[safe_idx]
             weights_tot = np.sum(weights, axis=1)
             weighted_sum = np.sum(weights * neighbor_values, axis=1)
 
-            # Where total weight is positive, compute interpolation;
-            # otherwise return NaN (covers both the "no valid
-            # neighbours" and "all-zero external weights" cases).
             interp_values = np.where(weights_tot > 0.0,
                                      weighted_sum / weights_tot,
                                      np.nan).astype(dtype)
 
-        # Confusion-distance override: if the nearest neighbour is
-        # closer than ``conf_dist``, return its value directly instead
-        # of interpolating (avoids singularities when reg == 0).
         if conf_dist is not None:
             min_dist = distances[:, 0]
             confused = np.isfinite(min_dist) & (min_dist <= conf_dist)

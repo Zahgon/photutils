@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for making example WCS objects.
-"""
 
 import astropy.units as u
 import numpy as np

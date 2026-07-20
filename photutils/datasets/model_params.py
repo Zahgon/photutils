@@ -1,8 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for making tables of model parameters or making models from a
-table of model parameters.
-"""
 
 import numpy as np
 from astropy.table import QTable
@@ -223,8 +218,6 @@ def make_random_models_table(n_sources, param_ranges, seed=None):
     sources.meta.update(_get_meta())  # keep sources.meta type
     sources['id'] = np.arange(n_sources) + 1
     for param_name, (lower, upper) in param_ranges.items():
-        # Generate a column for every item in param_ranges, even if it
-        # is not in the model (e.g., flux).
         sources[param_name] = rng.uniform(lower, upper, n_sources)
 
     return sources

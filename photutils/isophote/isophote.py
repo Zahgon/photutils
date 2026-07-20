@@ -1,7 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for storing the results of isophote fits.
-"""
 
 import astropy.units as u
 import numpy as np
@@ -16,7 +12,6 @@ from photutils.utils._misc import _get_meta
 
 __all__ = ['Isophote', 'IsophoteList']
 
-# Remove in 4.0
 _DEPRECATED_ATTRIBUTES = {
     'grad_error': 'gradient_err',
     'grad_r_error': 'gradient_rel_err',
@@ -27,107 +22,6 @@ _DEPRECATED_ATTRIBUTES = {
 
 
 class Isophote:
-    """
-    Container class to store the results of single isophote fit.
-
-    The extracted data sample at the given isophote (sampled intensities
-    along the elliptical path on the image) is also kept as an attribute
-    of this class. The container concept helps in segregating
-    information directly related to the sample, from information that
-    more closely relates to the fitting process, such as status codes,
-    errors for isophote parameters, and the like.
-
-    Parameters
-    ----------
-    sample : `~photutils.isophote.EllipseSample` instance
-        The sample information.
-    n_iter : int
-        The number of iterations used to fit the isophote.
-    valid : bool
-        The status of the fitting operation.
-    stop_code : int
-        The fitting stop code:
-
-           *  0: Normal.
-           *  1: Fewer than the pre-specified fraction of the extracted
-              data points are valid.
-           *  2: Exceeded maximum number of iterations.
-           *  3: Singular matrix in harmonic fit, results may not be
-              valid. This also signals an insufficient number of data
-              points to fit.
-           *  4: Small or wrong gradient, or ellipse diverged. Subsequent
-              ellipses at larger or smaller semimajor axis may have
-              the same constant geometric parameters. It's also
-              used when the user turns off the fitting algorithm
-              via the ``maxrit`` fitting parameter (see the
-              `~photutils.isophote.Ellipse` class).
-           *  5: Ellipse diverged; not even the minimum number of
-              iterations could be executed. Subsequent ellipses at
-              larger or smaller semimajor axis may have the same
-              constant geometric parameters.
-           * -1: Internal use.
-
-    Attributes
-    ----------
-    rms : float
-        The root-mean-square of intensity values along the elliptical
-        path.
-    int_err : float
-        The error of the mean (rms / sqrt(# data points)).
-    ellip_err : float
-        The ellipticity error.
-    pa_err : float
-        The position angle error (radians).
-    x0_err : float
-        The error associated with the center x coordinate.
-    y0_err : float
-        The error associated with the center y coordinate.
-    pix_stddev : float
-        The estimate of pixel standard deviation (rms * sqrt(average
-        sector integration area)).
-    grad : float
-        The local radial intensity gradient.
-    gradient_err : float
-        The measurement error of the local radial intensity gradient.
-    gradient_rel_err : float
-        The relative error of local radial intensity gradient.
-    tflux_e : float
-        The sum of all pixels inside the ellipse.
-    npix_e : int
-        The total number of valid pixels inside the ellipse.
-    tflux_c : float
-        The sum of all pixels inside a circle with the same ``sma`` as
-        the ellipse.
-    npix_c : int
-        The total number of valid pixels inside a circle with the same
-        ``sma`` as the ellipse.
-    sarea : float
-        The average sector area on the isophote (pixel**2).
-    ndata : int
-        .. deprecated:: 3.0
-            Use ``n_data`` instead.
-    n_data : int
-        The number of extracted data points.
-    nflag : int
-        .. deprecated:: 3.0
-            Use ``n_flag`` instead.
-    n_flag : int
-        The number of discarded data points. Data points can be
-        discarded either because they are physically outside the image
-        frame boundaries, because they were rejected by sigma-clipping,
-        or they are masked.
-    a3, b3, a4, b4 : float
-        The higher order harmonics that measure the deviations from a
-        perfect ellipse. These values are actually the raw harmonic
-        amplitudes divided by the local radial gradient and the
-        semimajor axis length, so they can directly be compared with
-        each other. The ``b4`` parameter is positive for galaxies with
-        disky (kite-like) isophotes and negative for galaxies with boxy
-        isophotes.
-    a3_err, b3_err, a4_err, b4_err : float
-        The errors associated with the ``a3``, ``b3``, ``a4``, and
-        ``b4`` attributes.
-    """
 
     def __init__(self, sample, n_iter, valid, stop_code):
         self.sample = sample
@@ -148,30 +42,24 @@ class Isophote:
             self.n_data = sample.actual_points
             self.n_flag = sample.total_points - sample.actual_points
 
-            # flux contained inside ellipse and circle
             (self.tflux_e, self.tflux_c, self.npix_e,
              self.npix_c) = self._compute_fluxes()
 
             self._compute_errors()
 
-            # deviations from a perfect ellipse
             (self.a3, self.b3, self.a3_err,
              self.b3_err) = self._compute_deviations(sample, 3)
             (self.a4, self.b4, self.a4_err,
              self.b4_err) = self._compute_deviations(sample, 4)
 
-    # Remove in 4.0
     def __getattr__(self, name):
         return deprecated_getattr(self, name, _DEPRECATED_ATTRIBUTES,
                                   since='3.0', until='4.0')
 
     @staticmethod
     def _raise_sma_error(err):
-        msg = "Comparison object does not have a 'sma' attribute"
-        raise AttributeError(msg) from err
+        pass
 
-    # This method is useful for sorting lists of instances. Note
-    # that __lt__ is the python3 way of supporting sorting.
     def __lt__(self, other):
         try:
             return self.sma < other.sma
@@ -213,38 +101,23 @@ class Isophote:
 
     @property
     def sma(self):
-        """
-        The semimajor axis length (pixels).
-        """
-        return self.sample.geometry.sma
+        pass
 
     @property
     def eps(self):
-        """
-        The ellipticity of the ellipse.
-        """
-        return self.sample.geometry.eps
+        pass
 
     @property
     def pa(self):
-        """
-        The position angle (radians) of the ellipse.
-        """
-        return self.sample.geometry.pa
+        pass
 
     @property
     def x0(self):
-        """
-        The center x coordinate (pixel).
-        """
-        return self.sample.geometry.x0
+        pass
 
     @property
     def y0(self):
-        """
-        The center y coordinate (pixel).
-        """
-        return self.sample.geometry.y0
+        pass
 
     def _compute_fluxes(self):
         """
@@ -257,7 +130,6 @@ class Isophote:
         ellipse radius vector, and integrals are updated if the pixel
         distance is smaller.
         """
-        # Compute limits of square array that encloses circle.
         sma = self.sample.geometry.sma
         x0 = self.sample.geometry.x0
         y0 = self.sample.geometry.y0
@@ -269,7 +141,6 @@ class Isophote:
         imax = min(xsize, int(x0 + sma + 0.5) + 1)
         jmax = min(ysize, int(y0 + sma + 0.5) + 1)
 
-        # Integrate
         if (jmax - jmin > 1) and (imax - imin) > 1:
             y, x = np.mgrid[jmin:jmax, imin:imax]
             radius, angle = self.sample.geometry.to_polar(x, y)
@@ -301,7 +172,6 @@ class Isophote:
         the raw data.
         """
         try:
-            # upper (third and fourth) harmonics
             up_coeffs, up_inv_hessian = fit_upper_harmonic(sample.values[0],
                                                            sample.values[2],
                                                            n)
@@ -320,9 +190,6 @@ class Isophote:
 
             ce = np.sqrt(np.diag(up_covariance))
 
-            # this comes from the old code. Likely it was based on
-            # empirical experience with the STSDAS task, so we leave
-            # it here without too much thought.
             gre = (self.gradient_rel_err
                    if self.gradient_rel_err is not None else 0.8)
 
@@ -352,10 +219,6 @@ class Isophote:
             eps = self.sample.geometry.eps
             pa = self.sample.geometry.pa
 
-            # parameter errors result from direct projection of
-            # coefficient errors. These showed to be the error estimators
-            # that best convey the errors measured in Monte Carlo
-            # experiments (see Busko 1996; ASPC 101, 139).
             ea = abs(errors[2] / self.grad)
             eb = abs(errors[1] * (1.0 - eps) / self.grad)
             self.x0_err = np.sqrt((ea * np.cos(pa))**2 + (eb * np.sin(pa))**2)
@@ -371,74 +234,22 @@ class Isophote:
             self.x0_err = self.y0_err = self.pa_err = self.ellip_err = 0.0
 
     def fix_geometry(self, isophote):
-        """
-        Fix the geometry of a problematic isophote to be identical to
-        the input isophote.
-
-        This method should be called when the fitting goes berserk and
-        delivers an isophote with bad geometry, such as ellipticity > 1
-        or another meaningless situation. This is not a problem in
-        itself when fitting any given isophote, but will create an error
-        when the affected isophote is used as starting guess for the
-        next fit.
-
-        Parameters
-        ----------
-        isophote : `~photutils.isophote.Isophote` instance
-            The isophote from which to take the geometry information.
-        """
-        self.sample.geometry.eps = isophote.sample.geometry.eps
-        self.sample.geometry.pa = isophote.sample.geometry.pa
-        self.sample.geometry.x0 = isophote.sample.geometry.x0
-        self.sample.geometry.y0 = isophote.sample.geometry.y0
+        pass
 
     def sampled_coordinates(self):
-        """
-        Return the (x, y) coordinates where the image was sampled in
-        order to get the intensities associated with this isophote.
-
-        Returns
-        -------
-        x, y : 1D `~numpy.ndarray`
-            The x and y coordinates as 1D arrays.
-        """
-        return self.sample.coordinates()
+        pass
 
     def to_table(self):
-        """
-        Return the main isophote parameters as an astropy
-        `~astropy.table.QTable`.
-
-        Returns
-        -------
-        result : `~astropy.table.QTable`
-            An astropy `~astropy.table.QTable` containing the main
-            isophote parameters.
-        """
-        return _isophote_list_to_table([self])
+        pass
 
 
 class CentralPixel(Isophote):
-    """
-    Specialized Isophote class for the galaxy central pixel.
-
-    This class holds only a single intensity value at the central
-    position. Thus, most of its attributes are hardcoded to `None` or a
-    default value when appropriate.
-
-    Parameters
-    ----------
-    sample : `~photutils.isophote.EllipseSample` instance
-        The sample information.
-    """
 
     def __init__(self, sample):
         super().__init__(sample, 0, valid=True, stop_code=0)
 
         self.intens = sample.mean
 
-        # some values are set to zero to ease certain tasks
-        # such as model building and plotting magnitude errors
         self.rms = None
         self.int_err = 0.0
         self.pix_stddev = None
@@ -469,43 +280,18 @@ class CentralPixel(Isophote):
 
     @property
     def eps(self):
-        """
-        The ellipticity of the ellipse.
-        """
-        return 0.0
+        pass
 
     @property
     def pa(self):
-        """
-        The position angle (radians) of the ellipse.
-        """
-        return 0.0
+        pass
 
 
 class IsophoteList:
-    """
-    Container class that provides the same attributes as the
-    `~photutils.isophote.Isophote` class, but for a list of isophotes.
-
-    The attributes of this class are arrays representing the values of
-    the attributes for the entire list of `~photutils.isophote.Isophote`
-    instances. See the `~photutils.isophote.Isophote` class for a
-    description of the attributes.
-
-    The class extends the `list` functionality, thus provides basic list
-    behavior such as slicing, appending, and support for '+' and '+='
-    operators.
-
-    Parameters
-    ----------
-    iso_list : list of `~photutils.isophote.Isophote`
-        A list of `~photutils.isophote.Isophote` instances.
-    """
 
     def __init__(self, iso_list):
         self._list = iso_list
 
-    # Remove in 4.0
     def __getattr__(self, name):
         return deprecated_getattr(self, name, _DEPRECATED_ATTRIBUTES,
                                   since='3.0', until='4.0')
@@ -579,451 +365,165 @@ class IsophoteList:
         return IsophoteList(temp)
 
     def get_closest(self, sma):
-        """
-        Return the `~photutils.isophote.Isophote` instance that has the
-        closest semimajor axis length to the input semimajor axis.
-
-        Parameters
-        ----------
-        sma : float
-            The semimajor axis length.
-
-        Returns
-        -------
-        isophote : `~photutils.isophote.Isophote` instance
-            The isophote with the closest semimajor axis value.
-        """
-        index = (np.abs(self.sma - sma)).argmin()
-        return self._list[index]
+        pass
 
     def _collect_as_array(self, attr_name):
-        return np.array(self._collect_as_list(attr_name), dtype=float)
+        pass
 
     def _collect_as_list(self, attr_name):
-        return [getattr(iso, attr_name) for iso in self._list]
+        pass
 
     @property
     def sample(self):
-        """
-        The isophote `~photutils.isophote.EllipseSample` information.
-        """
-        return self._collect_as_list('sample')
+        pass
 
     @property
     def sma(self):
-        """
-        The semimajor axis length (pixels).
-        """
-        return self._collect_as_array('sma')
+        pass
 
     @property
     def intens(self):
-        """
-        The mean intensity value along the elliptical path.
-        """
-        return self._collect_as_array('intens')
+        pass
 
     @property
     def int_err(self):
-        """
-        The error of the mean intensity (rms / sqrt(# data points)).
-        """
-        return self._collect_as_array('int_err')
+        pass
 
     @property
     def eps(self):
-        """
-        The ellipticity of the ellipse.
-        """
-        return self._collect_as_array('eps')
+        pass
 
     @property
     def ellip_err(self):
-        """
-        The ellipticity error.
-        """
-        return self._collect_as_array('ellip_err')
+        pass
 
     @property
     def pa(self):
-        """
-        The position angle (radians) of the ellipse.
-        """
-        return self._collect_as_array('pa')
+        pass
 
     @property
     def pa_err(self):
-        """
-        The position angle error (radians).
-        """
-        return self._collect_as_array('pa_err')
+        pass
 
     @property
     def x0(self):
-        """
-        The center x coordinate (pixel).
-        """
-        return self._collect_as_array('x0')
+        pass
 
     @property
     def x0_err(self):
-        """
-        The error associated with the center x coordinate.
-        """
-        return self._collect_as_array('x0_err')
+        pass
 
     @property
     def y0(self):
-        """
-        The center y coordinate (pixel).
-        """
-        return self._collect_as_array('y0')
+        pass
 
     @property
     def y0_err(self):
-        """
-        The error associated with the center y coordinate.
-        """
-        return self._collect_as_array('y0_err')
+        pass
 
     @property
     def rms(self):
-        """
-        The root-mean-square of intensity values along the elliptical
-        path.
-        """
-        return self._collect_as_array('rms')
+        pass
 
     @property
     def pix_stddev(self):
-        """
-        The estimate of pixel standard deviation (rms * sqrt(average
-        sector integration area)).
-        """
-        return self._collect_as_array('pix_stddev')
+        pass
 
     @property
     def grad(self):
-        """
-        The local radial intensity gradient.
-        """
-        return self._collect_as_array('grad')
+        pass
 
     @property
     def gradient_err(self):
-        """
-        The measurement error of the local radial intensity gradient.
-        """
-        return self._collect_as_array('gradient_err')
+        pass
 
     @property
     def gradient_rel_err(self):
-        """
-        The relative error of local radial intensity gradient.
-        """
-        return self._collect_as_array('gradient_rel_err')
+        pass
 
     @property
     def sarea(self):
-        """
-        The average sector area on the isophote (pixel**2).
-        """
-        return self._collect_as_array('sarea')
+        pass
 
     @property
     def n_data(self):
-        """
-        The number of extracted data points.
-        """
-        return self._collect_as_array('n_data')
+        pass
 
     @property
     def n_flag(self):
-        """
-        The number of discarded data points.
-
-        Data points can be discarded either because they are physically
-        outside the image frame boundaries, because they were rejected
-        by sigma-clipping, or they are masked.
-        """
-        return self._collect_as_array('n_flag')
+        pass
 
     @property
     def n_iter(self):
-        """
-        The number of iterations used to fit the isophote.
-        """
-        return self._collect_as_array('n_iter')
+        pass
 
     @property
     def valid(self):
-        """
-        The status of the fitting operation.
-        """
-        return self._collect_as_array('valid')
+        pass
 
     @property
     def stop_code(self):
-        """
-        The fitting stop code.
-        """
-        return self._collect_as_array('stop_code')
+        pass
 
     @property
     def tflux_e(self):
-        """
-        The sum of all pixels inside the ellipse.
-        """
-        return self._collect_as_array('tflux_e')
+        pass
 
     @property
     def tflux_c(self):
-        """
-        The sum of all pixels inside a circle with the same ``sma`` as
-        the ellipse.
-        """
-        return self._collect_as_array('tflux_c')
+        pass
 
     @property
     def npix_e(self):
-        """
-        The total number of valid pixels inside the ellipse.
-        """
-        return self._collect_as_array('npix_e')
+        pass
 
     @property
     def npix_c(self):
-        """
-        The total number of valid pixels inside a circle with the same
-        ``sma`` as the ellipse.
-        """
-        return self._collect_as_array('npix_c')
+        pass
 
     @property
     def a3(self):
-        """
-        A third-order harmonic coefficient.
-
-        See the
-        :func:`~photutils.isophote.fit_upper_harmonic` function for
-        details.
-        """
-        return self._collect_as_array('a3')
+        pass
 
     @property
     def b3(self):
-        """
-        A third-order harmonic coefficient.
-
-        See the
-        :func:`~photutils.isophote.fit_upper_harmonic` function for
-        details.
-        """
-        return self._collect_as_array('b3')
+        pass
 
     @property
     def a4(self):
-        """
-        A fourth-order harmonic coefficient.
-
-        See the
-        :func:`~photutils.isophote.fit_upper_harmonic` function for
-        details.
-        """
-        return self._collect_as_array('a4')
+        pass
 
     @property
     def b4(self):
-        """
-        A fourth-order harmonic coefficient.
-
-        See the
-        :func:`~photutils.isophote.fit_upper_harmonic` function for
-        details.
-        """
-        return self._collect_as_array('b4')
+        pass
 
     @property
     def a3_err(self):
-        """
-        The error associated with `~photutils.isophote.IsophoteList.a3`.
-        """
-        return self._collect_as_array('a3_err')
+        pass
 
     @property
     def b3_err(self):
-        """
-        The error associated with `~photutils.isophote.IsophoteList.b3`.
-        """
-        return self._collect_as_array('b3_err')
+        pass
 
     @property
     def a4_err(self):
-        """
-        The error associated with `~photutils.isophote.IsophoteList.a4`.
-        """
-        return self._collect_as_array('a4_err')
+        pass
 
     @property
     def b4_err(self):
-        """
-        The error associated with `~photutils.isophote.IsophoteList.b3`.
-        """
-        return self._collect_as_array('b4_err')
+        pass
 
     @deprecated_positional_kwargs(since='3.0', until='4.0')
     def to_table(self, columns='main'):
-        """
-        Convert an `~photutils.isophote.IsophoteList` instance to a
-        `~astropy.table.QTable` with the main isophote parameters.
-
-        Parameters
-        ----------
-        columns : list of str
-            A list of properties to export from the isophote list. If
-            ``columns`` is 'all' or 'main', it will pick all or few of the
-            main properties.
-
-        Returns
-        -------
-        result : `~astropy.table.QTable`
-            An astropy QTable with the main isophote parameters.
-        """
-        return _isophote_list_to_table(self, columns=columns)
+        pass
 
     def get_names(self):
-        """
-        Get the names of the properties of an
-        `~photutils.isophote.IsophoteList` instance.
-
-        Returns
-        -------
-        list_names : list
-            A list of the names of the properties.
-        """
-        return list(_get_properties(self).keys())
+        pass
 
 
 def _get_properties(isophote_list):
-    """
-    Return the properties of an `~photutils.isophote.IsophoteList`
-    instance.
-
-    Parameters
-    ----------
-    isophote_list : `~photutils.isophote.IsophoteList` instance
-        A list of isophotes.
-
-    Returns
-    -------
-    result : dict
-        An dictionary with the list of the isophote_list properties.
-    """
-    # deprecated IsophoteList property names to exclude
-    _deprecated_props = {'npix_e', 'npix_c'}
-
-    properties = {}
-    for an_item in isophote_list.__class__.__dict__:
-        p_type = isophote_list.__class__.__dict__[an_item]
-        # Exclude the sample property and deprecated properties
-        if (isinstance(p_type, property) and 'sample' not in an_item
-                and an_item not in _deprecated_props):
-            properties[str(an_item)] = str(an_item)
-    return properties
+    pass
 
 
 def _isophote_list_to_table(isophote_list, *, columns='main'):
-    """
-    Convert an `~photutils.isophote.IsophoteList` instance to a
-    `~astropy.table.QTable`.
-
-    Parameters
-    ----------
-    isophote_list : list of `~photutils.isophote.Isophote` or \
-            `~photutils.isophote.IsophoteList` instance
-        A list of isophotes.
-
-    columns : list of str
-        A list of properties to export from the ``isophote_list``. If
-        ``columns`` is 'all' or 'main', it will pick all or few of the
-        main properties.
-
-    Returns
-    -------
-    result : `~astropy.table.QTable`
-        An astropy QTable with the selected or all isophote parameters.
-    """
-    properties = {}
-
-    # Remove in 4.0
-    _deprecation_map = {
-        'grad_error': 'gradient_err',
-        'grad_rerror': 'gradient_rel_err',
-    }
-
-    # Replace with QTable in 4.0
-    isotable = create_empty_deprecated_qtable(
-        _deprecation_map, since='3.0', until='4.0')
-
-    isotable.meta.update(_get_meta())  # keep isotable.meta type
-
-    # main_properties: `List`
-    # A list of main parameters matching the original names of
-    # the isophote_list parameters
-
-    def __rename_properties(properties, *,
-                            orig_names=('int_err', 'eps', 'ellip_err',
-                                        'n_flag'),
-                            new_names=('intens_err', 'ellipticity',
-                                       'ellipticity_err', 'n_flag')):
-        """
-        Simple renaming for some of the isophote_list parameters.
-
-        Parameters
-        ----------
-        properties : dict
-            A dictionary with the list of the isophote_list parameters.
-
-        orig_names : list
-            A list of original names in the isophote_list parameters to
-            be renamed.
-
-        new_names : list
-            A list of new names matching in length of the orig_names.
-
-        Returns
-        -------
-        properties : dict
-            A dictionary with the list of the renamed isophote_list
-            parameters.
-        """
-        main_properties = ['sma', 'intens', 'int_err', 'eps', 'ellip_err',
-                           'pa', 'pa_err', 'grad', 'gradient_err',
-                           'gradient_rel_err', 'x0', 'x0_err', 'y0',
-                           'y0_err', 'n_data', 'n_flag', 'n_iter',
-                           'stop_code']
-
-        for an_item in main_properties:
-            if an_item in orig_names:
-                properties[an_item] = new_names[orig_names.index(an_item)]
-            else:
-                properties[an_item] = an_item
-        return properties
-
-    if columns == 'all':
-        properties = _get_properties(isophote_list)
-        properties = __rename_properties(properties)
-
-    elif columns == 'main':
-        properties = __rename_properties(properties)
-    else:
-        for an_item in columns:
-            properties[an_item] = an_item
-
-    for k, v in properties.items():
-        isotable[v] = np.array([getattr(iso, k) for iso in isophote_list])
-
-        if k in ('pa', 'pa_err'):
-            isotable[v] = np.rad2deg(isotable[v]) << u.deg
-
-    return isotable
+    pass

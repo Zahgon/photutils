@@ -1,8 +1,3 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-Tools for loading example datasets, from both within photutils and
-remote servers.
-"""
 
 from urllib.error import HTTPError, URLError
 
@@ -61,10 +56,6 @@ def _get_path(filename, location='local', cache=True, show_progress=False):
     elif location == 'remote':
         url = f'http://data.astropy.org/photometry/{filename}'
 
-        # First check if the file is already in the local cache from the
-        # primary URL, then check the backup URL. If the file is in the
-        # cache, the download_file function will simply return the local
-        # path to the cached file without trying to download it again.
         if is_url_in_cache(url):
             path = download_file(url, cache=True,
                                  show_progress=show_progress)
@@ -72,8 +63,6 @@ def _get_path(filename, location='local', cache=True, show_progress=False):
             path = download_file(datasets_url, cache=True,
                                  show_progress=show_progress)
         else:
-            # If the file is not in the local cache, then try to
-            # download it from the respective URLs.
             try:
                 path = download_file(url, cache=cache,
                                      show_progress=show_progress)
@@ -92,36 +81,7 @@ def _get_path(filename, location='local', cache=True, show_progress=False):
 
 @deprecated(since='3.0')
 def get_path(filename, location='local', cache=True, show_progress=False):
-    """
-    Get the local path for a given file.
-
-    Parameters
-    ----------
-    filename : str
-        File name in the local or remote data folder.
-
-    location : {'local', 'remote', 'photutils-datasets'}
-        File location. ``'local'`` means bundled with ``photutils``.
-        ``'remote'`` means the astropy data server (or the
-        photutils-datasets repo as a backup) or the Astropy cache
-        on your machine. ``'photutils-datasets'`` means the
-        photutils-datasets repo or the Astropy cache on your machine.
-
-    cache : bool, optional
-        Whether to cache the contents of remote URLs. Default is `True`.
-
-    show_progress : bool, optional
-        Whether to display a progress bar during the download (default
-        is `False`). The progress bar is displayed only when outputting
-        to a terminal.
-
-    Returns
-    -------
-    path : str
-        The local path of the file.
-    """
-    return _get_path(filename, location=location, cache=cache,
-                     show_progress=show_progress)
+    pass
 
 
 def _load_fits_as_imagehdu(path):
@@ -147,49 +107,12 @@ def _load_fits_as_imagehdu(path):
 
 @deprecated(since='3.0')
 def load_spitzer_image(show_progress=False):
-    """
-    Load a 4.5 micron Spitzer image.
-
-    The catalog for this image is returned by ``load_spitzer_catalog``.
-
-    Parameters
-    ----------
-    show_progress : bool, optional
-        Whether to display a progress bar during the download (default
-        is `False`).
-
-    Returns
-    -------
-    hdu : `~astropy.io.fits.ImageHDU`
-        The 4.5 micron Spitzer image in a FITS image HDU.
-    """
-    path = _get_path('spitzer_example_image.fits', location='remote',
-                     show_progress=show_progress)
-    return _load_fits_as_imagehdu(path)
+    pass
 
 
 @deprecated(since='3.0')
 def load_spitzer_catalog(show_progress=False):
-    """
-    Load a 4.5 micron Spitzer catalog.
-
-    The image from which this catalog was derived is returned by
-    ``load_spitzer_image``.
-
-    Parameters
-    ----------
-    show_progress : bool, optional
-        Whether to display a progress bar during the download (default
-        is `False`).
-
-    Returns
-    -------
-    catalog : `~astropy.table.Table`
-        The catalog of sources.
-    """
-    path = _get_path('spitzer_example_catalog.xml', location='remote',
-                     show_progress=show_progress)
-    return Table.read(path)
+    pass
 
 
 @deprecated_positional_kwargs(since='3.0', until='4.0')
@@ -255,64 +178,9 @@ def load_irac_psf(channel, show_progress=False):
 
 @deprecated(since='3.0')
 def load_star_image(show_progress=False):
-    """
-    Load an optical image of stars.
-
-    This is an image of M67 from photographic data obtained as part of
-    the National Geographic Society - Palomar Observatory Sky Survey
-    (NGS-POSS). The image was digitized from the POSS-I Red plates as
-    part of the Digitized Sky Survey produced at the Space Telescope
-    Science Institute.
-
-    Parameters
-    ----------
-    show_progress : bool, optional
-        Whether to display a progress bar during the download (default
-        is `False`).
-
-    Returns
-    -------
-    hdu : `~astropy.io.fits.ImageHDU`
-        The M67 image in a FITS image HDU.
-    """
-    path = _get_path('M6707HH.fits', location='remote',
-                     show_progress=show_progress)
-    return _load_fits_as_imagehdu(path)
+    pass
 
 
 @deprecated_positional_kwargs(since='3.0', until='4.0')
 def load_simulated_hst_star_image(show_progress=False):
-    """
-    Load a simulated HST WFC3/IR F160W image of stars.
-
-    The simulated image does not contain any background or noise.
-
-    Parameters
-    ----------
-    show_progress : bool, optional
-        Whether to display a progress bar during the download (default
-        is `False`).
-
-    Returns
-    -------
-    hdu : `~astropy.io.fits.ImageHDU`
-        A FITS image HDU containing the simulated HST star image.
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-
-        import matplotlib.pyplot as plt
-        from astropy.visualization import simple_norm
-        from photutils.datasets import load_simulated_hst_star_image
-
-        hdu = load_simulated_hst_star_image()
-        fig, ax = plt.subplots()
-        norm = simple_norm(hdu.data, 'sqrt', percent=99.5)
-        ax.imshow(hdu.data, norm=norm, origin='lower')
-    """
-    path = _get_path('hst_wfc3ir_f160w_simulated_starfield.fits',
-                     location='photutils-datasets',
-                     show_progress=show_progress)
-    return _load_fits_as_imagehdu(path)
+    pass
